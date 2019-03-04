@@ -1,10 +1,6 @@
 module github.com/pefish/go-http
 
 require (
-	gitee.com/pefish/p-go-application v0.0.0-20190207112659-19d6eec7cf9d
-	gitee.com/pefish/p-go-format v0.0.0-20190207114242-4a14f050b01b
-	gitee.com/pefish/p-go-json v0.0.0-20190209103631-ad0895be49dd
-	gitee.com/pefish/p-go-reflect v0.0.0-20190212081755-0bdefc421be7
 	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
 	github.com/golang/net v0.0.0-20190206173232-65e2d4e15006 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
