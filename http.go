@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"gitee.com/pefish/p-go-application"
-	"gitee.com/pefish/p-go-format"
-	"gitee.com/pefish/p-go-json"
-	"gitee.com/pefish/p-go-reflect"
+	"github.com/pefish/go-application"
+	"github.com/pefish/go-format"
+	"github.com/pefish/go-json"
+	"github.com/pefish/go-reflect"
 	"github.com/pefish/gorequest"
 	"io/ioutil"
 	"mime/multipart"
@@ -120,7 +120,7 @@ func (this *HttpClass) GetWithParamsForMap(url string, params interface{}, heade
 	return p_json.Json.Parse(this.GetWithParamsForString(url, params, headers)).(map[string]interface{})
 }
 
-func (this *HttpClass) GetForString(url string, headers map[string]string) string {
+func (this *HttpClass) GetForString(url string, github map[string]string) string {
 	request := gorequest.New()
 	request.Debug = p_application.Application.Debug
 	req := request.Timeout(this.Timeout).Get(url)
