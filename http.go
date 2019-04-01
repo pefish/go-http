@@ -120,7 +120,7 @@ func (this *HttpClass) GetWithParamsForMap(url string, params interface{}, heade
 	return p_json.Json.Parse(this.GetWithParamsForString(url, params, headers)).(map[string]interface{})
 }
 
-func (this *HttpClass) GetForString(url string, github map[string]string) string {
+func (this *HttpClass) GetForString(url string, headers map[string]string) string {
 	request := gorequest.New()
 	request.Debug = p_application.Application.Debug
 	req := request.Timeout(this.Timeout).Get(url)
