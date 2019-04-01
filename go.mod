@@ -7,7 +7,7 @@ require (
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/pefish/go-application v0.0.2
-	github.com/pefish/go-format v0.0.2
+	github.com/pefish/go-format v0.0.3
 	github.com/pefish/go-json v0.0.1
 	github.com/pefish/go-reflect v0.0.1
 	github.com/pefish/gorequest v0.2.16
