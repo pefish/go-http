@@ -22,6 +22,10 @@ type HttpClass struct {
 
 var Http = HttpClass{10 * time.Second}
 
+func (this *HttpClass) SetTimeout(timeout time.Duration) {
+	this.Timeout = timeout
+}
+
 func (this *HttpClass) PostJson(url string, params interface{}) interface{} {
 	return p_json.Json.Parse(this.PostJsonForString(url, params))
 }
