@@ -24,9 +24,9 @@ func (this *HttpClass) SetTimeout(timeout time.Duration) {
 }
 
 type RequestParam struct {
-	url     string
-	params  interface{}
-	headers map[string]interface{}
+	Url     string
+	Params  interface{}
+	Headers map[string]interface{}
 }
 
 func (this *HttpClass) PostJson(param RequestParam) interface{} {
@@ -44,15 +44,15 @@ func (this *HttpClass) PostForMap(param RequestParam) map[string]interface{} {
 func (this *HttpClass) PostJsonForString(param RequestParam) string {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Post(param.url)
-	if param.headers != nil {
-		for key, value := range param.headers {
+	req := request.Timeout(this.timeout).Post(param.Url)
+	if param.Headers != nil {
+		for key, value := range param.Headers {
 			req.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
-	_, body, errs := request.Set(`Content-Type`, `application/json`).Send(param.params).End()
+	_, body, errs := request.Set(`Content-Type`, `application/json`).Send(param.Params).End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostJsonForString ERROR!! url: %s, params: %v, error: %v`, param.url, param.params, errs[0])))
+		panic(errors.New(fmt.Sprintf(`PostJsonForString ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
 	}
 	return body
 }
@@ -78,29 +78,29 @@ type BytesFileInfo struct {
 }
 
 type PostMultipartParam struct {
-	url string
-	params interface{}
-	files map[string][]BytesFileInfo
-	headers map[string]interface{}
+	Url     string
+	Params  interface{}
+	Files   map[string][]BytesFileInfo
+	Headers map[string]interface{}
 }
 
 func (this *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, string) {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	req := request.Post(param.url).Type("multipart")
-	if param.headers != nil {
-		for key, value := range param.headers {
+	req := request.Post(param.Url).Type("multipart")
+	if param.Headers != nil {
+		for key, value := range param.Headers {
 			req.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
-	for keyName, fileArr := range param.files {
+	for keyName, fileArr := range param.Files {
 		for _, file := range fileArr {
 			req = req.SendFile(file.Bytes, file.FileName, keyName)
 		}
 	}
-	response, body, errs := req.Send(param.params).End()
+	response, body, errs := req.Send(param.Params).End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostMultipart ERROR!! url: %s, params: %v, error: %v`, param.url, param.params, errs[0])))
+		panic(errors.New(fmt.Sprintf(`PostMultipart ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
 	}
 	return response, body
 }
@@ -108,15 +108,15 @@ func (this *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, 
 func (this *HttpClass) Post(param RequestParam) (*http.Response, string) {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Post(param.url)
-	if param.headers != nil {
-		for key, value := range param.headers {
+	req := request.Timeout(this.timeout).Post(param.Url)
+	if param.Headers != nil {
+		for key, value := range param.Headers {
 			req.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
-	response, body, errs := req.Send(param.params).End()
+	response, body, errs := req.Send(param.Params).End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostForString ERROR!! url: %s, params: %v, error: %v`, param.url, param.params, errs[0])))
+		panic(errors.New(fmt.Sprintf(`PostForString ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
 	}
 	return response, body
 }
@@ -155,7 +155,7 @@ func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
 				strParams += (key + "=" + value + "&")
 			}
 		} else {
-			panic(errors.New(`params type error`))
+			panic(errors.New(`Params type error`))
 		}
 	} else if kind == reflect.Struct {
 		relParams := go_format.Format.StructToMap(params)
@@ -165,7 +165,7 @@ func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
 	} else if kind == reflect.Ptr {
 		return this.interfaceToUrlQuery(reflect.ValueOf(params).Elem().Interface())
 	} else {
-		panic(errors.New(`params type error`))
+		panic(errors.New(`Params type error`))
 	}
 	if 0 < len(strParams) {
 		strParams = string([]rune(strParams)[:len(strParams)-1])
@@ -180,15 +180,15 @@ func (this *HttpClass) GetWithParams(param RequestParam) (*http.Response, string
 func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Get(param.url)
-	if param.headers != nil {
-		for key, value := range param.headers {
+	req := request.Timeout(this.timeout).Get(param.Url)
+	if param.Headers != nil {
+		for key, value := range param.Headers {
 			req.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
 	response, body, errs := req.End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`GetForString ERROR!! url: %s, error: %v`, param.url, errs[0])))
+		panic(errors.New(fmt.Sprintf(`GetForString ERROR!! Url: %s, error: %v`, param.Url, errs[0])))
 	}
 	return response, body
 }

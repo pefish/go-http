@@ -7,6 +7,6 @@ import (
 
 func TestHttpClass_GetForString(t *testing.T) {
 	fmt.Println(Http.GetForString(RequestParam{
-		url: `http://baidu.com`,
+		Url: `http://baidu.com`,
 	}))
 }
