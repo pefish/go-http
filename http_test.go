@@ -1,4 +1,4 @@
-package p_http
+package go_http
 
 import (
 	"fmt"
