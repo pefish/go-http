@@ -3,11 +3,11 @@ package go_http
 import (
 	"errors"
 	"fmt"
+	"github.com/parnurzeal/gorequest"
 	"github.com/pefish/go-application"
 	"github.com/pefish/go-format"
 	"github.com/pefish/go-json"
 	"github.com/pefish/go-reflect"
-	"github.com/pefish/gorequest"
 	"net/http"
 	"reflect"
 	"time"
@@ -42,19 +42,14 @@ func (this *HttpClass) PostForMap(param RequestParam) map[string]interface{} {
 }
 
 func (this *HttpClass) PostJsonForString(param RequestParam) string {
-	request := gorequest.New()
-	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Post(param.Url)
 	if param.Headers != nil {
-		for key, value := range param.Headers {
-			req.Set(key, go_reflect.Reflect.ToString(value))
+		param.Headers[`Content-Type`] = `application/json`
+	} else {
+		param.Headers = map[string]interface{}{
+			`Content-Type`: `application/json`,
 		}
 	}
-	_, body, errs := request.Set(`Content-Type`, `application/json`).Send(param.Params).End()
-	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostJsonForString ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
-	}
-	return body
+	return this.PostForString(param)
 }
 
 func (this *HttpClass) PostForString(param RequestParam) string {
@@ -103,6 +98,33 @@ func (this *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, 
 		panic(errors.New(fmt.Sprintf(`PostMultipart ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
 	}
 	return response, body
+}
+
+func (this *HttpClass) PostJsonForStruct(param RequestParam, struct_ interface{}) *http.Response {
+	if param.Headers != nil {
+		param.Headers[`Content-Type`] = `application/json`
+	} else {
+		param.Headers = map[string]interface{}{
+			`Content-Type`: `application/json`,
+		}
+	}
+	return this.PostForStruct(param, struct_)
+}
+
+func (this *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) *http.Response {
+	request := gorequest.New()
+	request.Debug = go_application.Application.Debug
+	req := request.Timeout(this.timeout).Post(param.Url)
+	if param.Headers != nil {
+		for key, value := range param.Headers {
+			req.Set(key, go_reflect.Reflect.ToString(value))
+		}
+	}
+	response, _, errs := req.Send(param.Params).EndStruct(struct_)
+	if len(errs) > 0 {
+		panic(errors.New(fmt.Sprintf(`PostForString ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
+	}
+	return response
 }
 
 func (this *HttpClass) Post(param RequestParam) (*http.Response, string) {
