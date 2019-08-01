@@ -1,7 +1,6 @@
 package go_http
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/pefish/go-application"
@@ -9,68 +8,67 @@ import (
 	"github.com/pefish/go-json"
 	"github.com/pefish/go-reflect"
 	"github.com/pefish/gorequest"
-	"io/ioutil"
-	"mime/multipart"
 	"net/http"
 	"reflect"
 	"time"
 )
 
 type HttpClass struct {
-	Timeout time.Duration
+	timeout time.Duration
 }
 
 var Http = HttpClass{10 * time.Second}
 
 func (this *HttpClass) SetTimeout(timeout time.Duration) {
-	this.Timeout = timeout
+	this.timeout = timeout
 }
 
-func (this *HttpClass) PostJson(url string, params interface{}) interface{} {
-	return go_json.Json.Parse(this.PostJsonForString(url, params))
+type RequestParam struct {
+	url     string
+	params  interface{}
+	headers map[string]interface{}
 }
 
-func (this *HttpClass) PostJsonForMap(url string, params interface{}) map[string]interface{} {
-	return go_json.Json.Parse(this.PostJsonForString(url, params)).(map[string]interface{})
+func (this *HttpClass) PostJson(param RequestParam) interface{} {
+	return go_json.Json.Parse(this.PostJsonForString(param))
 }
 
-func (this *HttpClass) PostForMap(url string, params interface{}, headers map[string]string) map[string]interface{} {
-	return go_json.Json.Parse(this.PostForString(url, params, headers)).(map[string]interface{})
+func (this *HttpClass) PostJsonForMap(param RequestParam) map[string]interface{} {
+	return go_json.Json.Parse(this.PostJsonForString(param)).(map[string]interface{})
 }
 
-func (this *HttpClass) PostJsonForString(url string, params interface{}) string {
+func (this *HttpClass) PostForMap(param RequestParam) map[string]interface{} {
+	return go_json.Json.Parse(this.PostForString(param)).(map[string]interface{})
+}
+
+func (this *HttpClass) PostJsonForString(param RequestParam) string {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	_, body, errs := request.Timeout(this.Timeout).Post(url).Set(`Content-Type`, `application/json`).Send(params).End()
-	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostJsonForString ERROR!! url: %s, params: %v, error: %v`, url, params, errs[0])))
-	}
-	return body
-}
-
-func (this *HttpClass) PostForString(url string, params interface{}, headers map[string]string) string {
-	request := gorequest.New()
-	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.Timeout).Post(url)
-	if headers != nil {
-		for key, value := range headers {
-			req.Set(key, value)
+	req := request.Timeout(this.timeout).Post(param.url)
+	if param.headers != nil {
+		for key, value := range param.headers {
+			req.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
-	_, body, errs := req.Send(params).End()
+	_, body, errs := request.Set(`Content-Type`, `application/json`).Send(param.params).End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostForString ERROR!! url: %s, params: %v, error: %v`, url, params, errs[0])))
+		panic(errors.New(fmt.Sprintf(`PostJsonForString ERROR!! url: %s, params: %v, error: %v`, param.url, param.params, errs[0])))
 	}
 	return body
 }
 
-func (this *HttpClass) PostMultipartForMap(url string, params interface{}, files map[string][]BytesFileInfo, headers map[string]string) map[string]interface{} {
-	body := this.PostMultipartForString(url, params, files, headers)
+func (this *HttpClass) PostForString(param RequestParam) string {
+	_, body := this.Post(param)
+	return body
+}
+
+func (this *HttpClass) PostMultipartForMap(param PostMultipartParam) map[string]interface{} {
+	body := this.PostMultipartForString(param)
 	return go_json.Json.ParseToMap(body)
 }
 
-func (this *HttpClass) PostMultipartForString(url string, params interface{}, files map[string][]BytesFileInfo, headers map[string]string) string {
-	_, body := this.PostMultipart(url, params, files, headers)
+func (this *HttpClass) PostMultipartForString(param PostMultipartParam) string {
+	_, body := this.PostMultipart(param)
 	return body
 }
 
@@ -79,69 +77,65 @@ type BytesFileInfo struct {
 	FileName string
 }
 
-func (this *HttpClass) PostMultipart(url string, params interface{}, files map[string][]BytesFileInfo, headers map[string]string) (*http.Response, string) {
+type PostMultipartParam struct {
+	url string
+	params interface{}
+	files map[string][]BytesFileInfo
+	headers map[string]interface{}
+}
+
+func (this *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, string) {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	req := request.Post(url).Type("multipart")
-	if headers != nil {
-		for key, value := range headers {
-			req.Set(key, value)
+	req := request.Post(param.url).Type("multipart")
+	if param.headers != nil {
+		for key, value := range param.headers {
+			req.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
-	for keyName, fileArr := range files {
+	for keyName, fileArr := range param.files {
 		for _, file := range fileArr {
 			req = req.SendFile(file.Bytes, file.FileName, keyName)
 		}
 	}
-	response, body, errs := req.Send(params).End()
+	response, body, errs := req.Send(param.params).End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostMultipart ERROR!! url: %s, params: %v, error: %v`, url, params, errs[0])))
+		panic(errors.New(fmt.Sprintf(`PostMultipart ERROR!! url: %s, params: %v, error: %v`, param.url, param.params, errs[0])))
 	}
 	return response, body
 }
 
-func (this *HttpClass) Post(url string, params interface{}, headers map[string]string) (*http.Response, string) {
+func (this *HttpClass) Post(param RequestParam) (*http.Response, string) {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.Timeout).Post(url)
-	if headers != nil {
-		for key, value := range headers {
-			req.Set(key, value)
+	req := request.Timeout(this.timeout).Post(param.url)
+	if param.headers != nil {
+		for key, value := range param.headers {
+			req.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
-	response, body, errs := req.Send(params).End()
+	response, body, errs := req.Send(param.params).End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostForString ERROR!! url: %s, params: %v, error: %v`, url, params, errs[0])))
+		panic(errors.New(fmt.Sprintf(`PostForString ERROR!! url: %s, params: %v, error: %v`, param.url, param.params, errs[0])))
 	}
 	return response, body
 }
 
-func (this *HttpClass) GetForMap(url string, headers map[string]string) map[string]interface{} {
-	return go_json.Json.Parse(this.GetForString(url, headers)).(map[string]interface{})
+func (this *HttpClass) GetForMap(param RequestParam) map[string]interface{} {
+	return go_json.Json.Parse(this.GetForString(param)).(map[string]interface{})
 }
 
-func (this *HttpClass) GetWithParamsForMap(url string, params interface{}, headers map[string]string) map[string]interface{} {
-	return go_json.Json.Parse(this.GetWithParamsForString(url, params, headers)).(map[string]interface{})
+func (this *HttpClass) GetWithParamsForMap(param RequestParam) map[string]interface{} {
+	return go_json.Json.Parse(this.GetWithParamsForString(param)).(map[string]interface{})
 }
 
-func (this *HttpClass) GetForString(url string, headers map[string]string) string {
-	request := gorequest.New()
-	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.Timeout).Get(url)
-	if headers != nil {
-		for key, value := range headers {
-			req.Set(key, value)
-		}
-	}
-	_, body, errs := req.End()
-	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`GetForString ERROR!! url: %s, error: %v`, url, errs[0])))
-	}
+func (this *HttpClass) GetForString(param RequestParam) string {
+	_, body := this.Get(param)
 	return body
 }
 
-func (this *HttpClass) GetWithParamsForString(url string, params interface{}, headers map[string]string) string {
-	return this.GetForString(url+`?`+this.interfaceToUrlQuery(params), headers)
+func (this *HttpClass) GetWithParamsForString(param RequestParam) string {
+	return this.GetForString(param)
 }
 
 func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
@@ -179,51 +173,22 @@ func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
 	return strParams
 }
 
-func (this *HttpClass) GetWithParams(url string, params interface{}, headers map[string]string) (*http.Response, string) {
-	return this.Get(url+`?`+this.interfaceToUrlQuery(params), headers)
+func (this *HttpClass) GetWithParams(param RequestParam) (*http.Response, string) {
+	return this.Get(param)
 }
 
-func (this *HttpClass) Get(url string, headers map[string]string) (*http.Response, string) {
+func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.Timeout).Get(url)
-	if headers != nil {
-		for key, value := range headers {
-			req.Set(key, value)
+	req := request.Timeout(this.timeout).Get(param.url)
+	if param.headers != nil {
+		for key, value := range param.headers {
+			req.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
 	response, body, errs := req.End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`GetForString ERROR!! url: %s, error: %v`, url, errs[0])))
+		panic(errors.New(fmt.Sprintf(`GetForString ERROR!! url: %s, error: %v`, param.url, errs[0])))
 	}
 	return response, body
-}
-
-func (this *HttpClass) MultipartWithMap(url string, params map[string]string) (map[string]interface{}, error) {
-
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	for key, val := range params {
-		writer.WriteField(key, val)
-	}
-	err := writer.Close()
-	if err != nil {
-		return nil, err
-	}
-	req, err := http.NewRequest("POST", url, body)
-	req.Header.Set("Connection", "Keep-Alive")
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; zh-CN; rv:1.9.2.6)")
-	req.Header.Set("Charset", "UTF-8")
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	buffer, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	return go_json.Json.Parse(string(buffer)).(map[string]interface{}), nil
 }
