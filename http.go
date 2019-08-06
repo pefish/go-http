@@ -202,7 +202,7 @@ func (this *HttpClass) GetWithParams(param RequestParam) (*http.Response, string
 func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Get(param.Url)
+	req := request.Timeout(this.timeout).Get(param.Url + `?` + this.interfaceToUrlQuery(param.Params))
 	if param.Headers != nil {
 		for key, value := range param.Headers {
 			req.Set(key, go_reflect.Reflect.ToString(value))
