@@ -122,7 +122,7 @@ func (this *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) *h
 	}
 	response, _, errs := req.Send(param.Params).EndStruct(struct_)
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostForString ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
+		panic(errors.New(fmt.Sprintf(`PostForStruct ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
 	}
 	return response
 }
@@ -138,7 +138,7 @@ func (this *HttpClass) Post(param RequestParam) (*http.Response, string) {
 	}
 	response, body, errs := req.Send(param.Params).End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostForString ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
+		panic(errors.New(fmt.Sprintf(`Post ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
 	}
 	return response, body
 }
@@ -147,17 +147,9 @@ func (this *HttpClass) GetForMap(param RequestParam) map[string]interface{} {
 	return go_json.Json.Parse(this.GetForString(param)).(map[string]interface{})
 }
 
-func (this *HttpClass) GetWithParamsForMap(param RequestParam) map[string]interface{} {
-	return go_json.Json.Parse(this.GetWithParamsForString(param)).(map[string]interface{})
-}
-
 func (this *HttpClass) GetForString(param RequestParam) string {
 	_, body := this.Get(param)
 	return body
-}
-
-func (this *HttpClass) GetWithParamsForString(param RequestParam) string {
-	return this.GetForString(param)
 }
 
 func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
@@ -195,10 +187,6 @@ func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
 	return strParams
 }
 
-func (this *HttpClass) GetWithParams(param RequestParam) (*http.Response, string) {
-	return this.Get(param)
-}
-
 func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
@@ -210,7 +198,23 @@ func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
 	}
 	response, body, errs := req.End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`GetForString ERROR!! Url: %s, error: %v`, param.Url, errs[0])))
+		panic(errors.New(fmt.Sprintf(`Get ERROR!! Url: %s, error: %v`, param.Url, errs[0])))
 	}
 	return response, body
+}
+
+func (this *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) *http.Response {
+	request := gorequest.New()
+	request.Debug = go_application.Application.Debug
+	req := request.Timeout(this.timeout).Get(param.Url + `?` + this.interfaceToUrlQuery(param.Params))
+	if param.Headers != nil {
+		for key, value := range param.Headers {
+			req.Set(key, go_reflect.Reflect.ToString(value))
+		}
+	}
+	response, _, errs := req.EndStruct(struct_)
+	if len(errs) > 0 {
+		panic(errors.New(fmt.Sprintf(`GetForStruct ERROR!! Url: %s, error: %v`, param.Url, errs[0])))
+	}
+	return response
 }
