@@ -7,9 +7,9 @@ require (
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/parnurzeal/gorequest v0.2.15
 	github.com/pefish/go-application v0.1.0
-	github.com/pefish/go-format v0.1.0
-	github.com/pefish/go-json v0.1.0
-	github.com/pefish/go-reflect v0.0.3
+	github.com/pefish/go-format v0.1.1
+	github.com/pefish/go-json v0.1.1
+	github.com/pefish/go-reflect v0.0.7
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20181108003508-044398e4856c // indirect

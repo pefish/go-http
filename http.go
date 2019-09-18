@@ -157,25 +157,11 @@ func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
 	kind := type_.Kind()
 	var strParams string
 	if kind == reflect.Map {
-		eleKind := type_.Elem().Kind()
-		if eleKind == reflect.Interface {
-			relParams := params.(map[string]interface{})
-			for key, value := range relParams {
-				strParams += (key + "=" + go_reflect.Reflect.ToString(value) + "&")
-			}
-		} else if eleKind == reflect.String {
-			relParams := params.(map[string]string)
-			for key, value := range relParams {
-				strParams += (key + "=" + value + "&")
-			}
-		} else {
-			panic(errors.New(`Params type error`))
+		for key, value := range params.(map[string]interface{}) {
+			strParams += key + "=" + go_reflect.Reflect.ToString(value) + "&"
 		}
 	} else if kind == reflect.Struct {
-		relParams := go_format.Format.StructToMap(params)
-		for key, value := range relParams {
-			strParams += (key + "=" + go_reflect.Reflect.ToString(value) + "&")
-		}
+		return this.interfaceToUrlQuery(go_format.Format.StructToMap(params))
 	} else if kind == reflect.Ptr {
 		return this.interfaceToUrlQuery(reflect.ValueOf(params).Elem().Interface())
 	} else {
