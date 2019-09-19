@@ -7,11 +7,8 @@ import (
 
 func TestHttpClass_GetForString(t *testing.T) {
 	fmt.Println(Http.GetForString(RequestParam{
-		Url: `http://www.baidu.com`,
-		Params: map[string]interface{}{
-			`haha`: 56,
-			`test`: `hdh`,
-		},
+		Url:    `http://www.baidu.com`,
+		Params: nil,
 	}))
 }
 
@@ -28,4 +25,11 @@ func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 	})
 	fmt.Printf(`%#v`, result)
 
+}
+
+func TestHttpClass_PostForString(t *testing.T) {
+	fmt.Println(Http.PostForString(RequestParam{
+		Url:    `http://www.baidu.com`,
+		Params: nil,
+	}))
 }

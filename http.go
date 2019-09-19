@@ -153,6 +153,9 @@ func (this *HttpClass) GetForString(param RequestParam) string {
 }
 
 func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
+	if params == nil {
+		return ``
+	}
 	type_ := reflect.TypeOf(params)
 	kind := type_.Kind()
 	var strParams string
@@ -170,13 +173,13 @@ func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
 	if 0 < len(strParams) {
 		strParams = string([]rune(strParams)[:len(strParams)-1])
 	}
-	return strParams
+	return `?` + strParams
 }
 
 func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Get(param.Url + `?` + this.interfaceToUrlQuery(param.Params))
+	req := request.Timeout(this.timeout).Get(param.Url + this.interfaceToUrlQuery(param.Params))
 	if param.Headers != nil {
 		for key, value := range param.Headers {
 			req.Set(key, go_reflect.Reflect.ToString(value))
@@ -192,7 +195,7 @@ func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
 func (this *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) *http.Response {
 	request := gorequest.New()
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Get(param.Url + `?` + this.interfaceToUrlQuery(param.Params))
+	req := request.Timeout(this.timeout).Get(param.Url + this.interfaceToUrlQuery(param.Params))
 	if param.Headers != nil {
 		for key, value := range param.Headers {
 			req.Set(key, go_reflect.Reflect.ToString(value))
