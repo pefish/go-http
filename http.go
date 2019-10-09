@@ -14,19 +14,22 @@ import (
 )
 
 type HttpClass struct {
-	timeout time.Duration
+	RequestClient *gorequest.SuperAgent
 }
 
-var Http = HttpClass{10 * time.Second}
+var Http = HttpClass{
+	RequestClient: gorequest.New(),
+}
 
 func (this *HttpClass) SetTimeout(timeout time.Duration) {
-	this.timeout = timeout
+	this.RequestClient.Timeout(timeout)
 }
 
 type RequestParam struct {
-	Url     string
-	Params  interface{}
-	Headers map[string]interface{}
+	Url       string
+	Params    interface{}
+	Headers   map[string]interface{}
+	BasicAuth *BasicAuth
 }
 
 func (this *HttpClass) PostJson(param RequestParam) interface{} {
@@ -72,28 +75,36 @@ type BytesFileInfo struct {
 	FileName string
 }
 
+type BasicAuth struct {
+	Username string
+	Password string
+}
+
 type PostMultipartParam struct {
-	Url     string
-	Params  interface{}
-	Files   map[string][]BytesFileInfo
-	Headers map[string]interface{}
+	Url       string
+	Params    interface{}
+	Files     map[string][]BytesFileInfo
+	Headers   map[string]interface{}
+	BasicAuth *BasicAuth
 }
 
 func (this *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, string) {
-	request := gorequest.New()
+	request := this.RequestClient.Post(param.Url).Type("multipart")
 	request.Debug = go_application.Application.Debug
-	req := request.Post(param.Url).Type("multipart")
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			req.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.ToString(value))
 		}
+	}
+	if param.BasicAuth != nil {
+		request = request.SetBasicAuth(param.BasicAuth.Username, param.BasicAuth.Password)
 	}
 	for keyName, fileArr := range param.Files {
 		for _, file := range fileArr {
-			req = req.SendFile(file.Bytes, file.FileName, keyName)
+			request = request.SendFile(file.Bytes, file.FileName, keyName)
 		}
 	}
-	response, body, errs := req.Send(param.Params).End()
+	response, body, errs := request.Send(param.Params).End()
 	if len(errs) > 0 {
 		panic(errors.New(fmt.Sprintf(`PostMultipart ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
 	}
@@ -112,15 +123,17 @@ func (this *HttpClass) PostJsonForStruct(param RequestParam, struct_ interface{}
 }
 
 func (this *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) *http.Response {
-	request := gorequest.New()
+	request := this.RequestClient.Post(param.Url)
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Post(param.Url)
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			req.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
-	response, _, errs := req.Send(param.Params).EndStruct(struct_)
+	if param.BasicAuth != nil {
+		request = request.SetBasicAuth(param.BasicAuth.Username, param.BasicAuth.Password)
+	}
+	response, _, errs := request.Send(param.Params).EndStruct(struct_)
 	if len(errs) > 0 {
 		panic(errors.New(fmt.Sprintf(`PostForStruct ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
 	}
@@ -128,15 +141,17 @@ func (this *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) *h
 }
 
 func (this *HttpClass) Post(param RequestParam) (*http.Response, string) {
-	request := gorequest.New()
+	request := this.RequestClient.Post(param.Url)
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Post(param.Url)
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			req.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
-	response, body, errs := req.Send(param.Params).End()
+	if param.BasicAuth != nil {
+		request = request.SetBasicAuth(param.BasicAuth.Username, param.BasicAuth.Password)
+	}
+	response, body, errs := request.Send(param.Params).End()
 	if len(errs) > 0 {
 		panic(errors.New(fmt.Sprintf(`Post ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
 	}
@@ -177,15 +192,17 @@ func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
 }
 
 func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
-	request := gorequest.New()
+	request := this.RequestClient.Get(param.Url + this.interfaceToUrlQuery(param.Params))
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Get(param.Url + this.interfaceToUrlQuery(param.Params))
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			req.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
-	response, body, errs := req.End()
+	if param.BasicAuth != nil {
+		request = request.SetBasicAuth(param.BasicAuth.Username, param.BasicAuth.Password)
+	}
+	response, body, errs := request.End()
 	if len(errs) > 0 {
 		panic(errors.New(fmt.Sprintf(`Get ERROR!! Url: %s, error: %v`, param.Url, errs[0])))
 	}
@@ -193,17 +210,37 @@ func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
 }
 
 func (this *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) *http.Response {
-	request := gorequest.New()
+	request := this.RequestClient.Get(param.Url + this.interfaceToUrlQuery(param.Params))
 	request.Debug = go_application.Application.Debug
-	req := request.Timeout(this.timeout).Get(param.Url + this.interfaceToUrlQuery(param.Params))
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			req.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.ToString(value))
 		}
 	}
-	response, _, errs := req.EndStruct(struct_)
+	if param.BasicAuth != nil {
+		request = request.SetBasicAuth(param.BasicAuth.Username, param.BasicAuth.Password)
+	}
+	response, _, errs := request.EndStruct(struct_)
 	if len(errs) > 0 {
 		panic(errors.New(fmt.Sprintf(`GetForStruct ERROR!! Url: %s, error: %v`, param.Url, errs[0])))
+	}
+	return response
+}
+
+func (this *HttpClass) PutForStruct(param RequestParam, struct_ interface{}) *http.Response {
+	request := this.RequestClient.Put(param.Url)
+	request.Debug = go_application.Application.Debug
+	if param.Headers != nil {
+		for key, value := range param.Headers {
+			request.Set(key, go_reflect.Reflect.ToString(value))
+		}
+	}
+	if param.BasicAuth != nil {
+		request = request.SetBasicAuth(param.BasicAuth.Username, param.BasicAuth.Password)
+	}
+	response, _, errs := request.Send(param.Params).EndStruct(struct_)
+	if len(errs) > 0 {
+		panic(errors.New(fmt.Sprintf(`PutForStruct ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
 	}
 	return response
 }
