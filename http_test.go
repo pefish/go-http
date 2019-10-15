@@ -3,10 +3,11 @@ package go_http
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestHttpClass_GetForString(t *testing.T) {
-	fmt.Println(Http.GetForString(RequestParam{
+	fmt.Println(NewHttpRequester(WithTimeout(10 * time.Second)).GetForString(RequestParam{
 		Url:    `http://www.baidu.com`,
 		Params: nil,
 	}))
@@ -18,7 +19,7 @@ func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 		B string `json:"b"`
 		C uint64 `json:"c"`
 	}
-	result := Http.interfaceToUrlQuery(Test{
+	result := NewHttpRequester().interfaceToUrlQuery(Test{
 		A: `11`,
 		B: `22`,
 		C: 123,
@@ -28,7 +29,7 @@ func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 }
 
 func TestHttpClass_PostForString(t *testing.T) {
-	fmt.Println(Http.PostForString(RequestParam{
+	fmt.Println(NewHttpRequester().PostForString(RequestParam{
 		Url:    `http://www.baidu.com`,
 		Params: nil,
 	}))

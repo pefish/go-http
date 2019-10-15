@@ -17,12 +17,30 @@ type HttpClass struct {
 	RequestClient *gorequest.SuperAgent
 }
 
-var Http = HttpClass{
-	RequestClient: gorequest.New(),
+type HttpRequestOptionFunc func(options *HttpRequestOption)
+
+type HttpRequestOption struct {
+	timeout time.Duration
 }
 
-func (this *HttpClass) SetTimeout(timeout time.Duration) {
-	this.RequestClient.Timeout(timeout)
+var defaultHttpRequestOption = HttpRequestOption{
+	timeout: 10 * time.Second,
+}
+
+func WithTimeout(timeout time.Duration) HttpRequestOptionFunc {
+	return func(option *HttpRequestOption) {
+		option.timeout = timeout
+	}
+}
+
+func NewHttpRequester(opts ...HttpRequestOptionFunc) *HttpClass {
+	option := defaultHttpRequestOption
+	for _, o := range opts {
+		o(&option)
+	}
+	return &HttpClass{
+		RequestClient: gorequest.New().Timeout(option.timeout),
+	}
 }
 
 type RequestParam struct {
