@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var Http = NewHttpRequester()
+
 type HttpClass struct {
 	RequestClient *gorequest.SuperAgent
 }
