@@ -113,7 +113,7 @@ func (this *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, 
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			request.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.MustToString(value))
 		}
 	}
 	if param.BasicAuth != nil {
@@ -147,7 +147,7 @@ func (this *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) *h
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			request.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.MustToString(value))
 		}
 	}
 	if param.BasicAuth != nil {
@@ -165,7 +165,7 @@ func (this *HttpClass) Post(param RequestParam) (*http.Response, string) {
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			request.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.MustToString(value))
 		}
 	}
 	if param.BasicAuth != nil {
@@ -196,7 +196,7 @@ func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
 	var strParams string
 	if kind == reflect.Map {
 		for key, value := range params.(map[string]interface{}) {
-			strParams += key + "=" + go_reflect.Reflect.ToString(value) + "&"
+			strParams += key + "=" + go_reflect.Reflect.MustToString(value) + "&"
 		}
 	} else if kind == reflect.Struct {
 		return this.interfaceToUrlQuery(go_format.Format.StructToMap(params))
@@ -216,7 +216,7 @@ func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			request.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.MustToString(value))
 		}
 	}
 	if param.BasicAuth != nil {
@@ -234,7 +234,7 @@ func (this *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) *ht
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			request.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.MustToString(value))
 		}
 	}
 	if param.BasicAuth != nil {
@@ -252,7 +252,7 @@ func (this *HttpClass) PutForStruct(param RequestParam, struct_ interface{}) *ht
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			request.Set(key, go_reflect.Reflect.ToString(value))
+			request.Set(key, go_reflect.Reflect.MustToString(value))
 		}
 	}
 	if param.BasicAuth != nil {
