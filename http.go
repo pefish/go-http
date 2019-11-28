@@ -52,19 +52,63 @@ type RequestParam struct {
 	BasicAuth *BasicAuth
 }
 
-func (this *HttpClass) PostJson(param RequestParam) interface{} {
-	return go_json.Json.Parse(this.PostJsonForString(param))
+func (this *HttpClass) MustPostJson(param RequestParam) interface{} {
+	body, err := this.PostJson(param)
+	if err != nil {
+		panic(err)
+	}
+	return body
 }
 
-func (this *HttpClass) PostJsonForMap(param RequestParam) map[string]interface{} {
-	return go_json.Json.Parse(this.PostJsonForString(param)).(map[string]interface{})
+func (this *HttpClass) PostJson(param RequestParam) (interface{}, error) {
+	body, err := this.PostJsonForString(param)
+	if err != nil {
+		return nil, err
+	}
+	return go_json.Json.Parse(body), nil
 }
 
-func (this *HttpClass) PostForMap(param RequestParam) map[string]interface{} {
-	return go_json.Json.Parse(this.PostForString(param)).(map[string]interface{})
+func (this *HttpClass) MustPostJsonForMap(param RequestParam) map[string]interface{} {
+	body, err := this.PostJsonForMap(param)
+	if err != nil {
+		panic(err)
+	}
+	return body
 }
 
-func (this *HttpClass) PostJsonForString(param RequestParam) string {
+func (this *HttpClass) PostJsonForMap(param RequestParam) (map[string]interface{}, error) {
+	body, err := this.PostJsonForString(param)
+	if err != nil {
+		return nil, err
+	}
+	return go_json.Json.Parse(body).(map[string]interface{}), nil
+}
+
+func (this *HttpClass) MustPostForMap(param RequestParam) map[string]interface{} {
+	body, err := this.PostForMap(param)
+	if err != nil {
+		panic(err)
+	}
+	return body
+}
+
+func (this *HttpClass) PostForMap(param RequestParam) (map[string]interface{}, error) {
+	body, err := this.PostForString(param)
+	if err != nil {
+		return nil, err
+	}
+	return go_json.Json.Parse(body).(map[string]interface{}), nil
+}
+
+func (this *HttpClass) MustPostJsonForString(param RequestParam) string {
+	body, err := this.PostForString(param)
+	if err != nil {
+		panic(err)
+	}
+	return body
+}
+
+func (this *HttpClass) PostJsonForString(param RequestParam) (string, error) {
 	if param.Headers != nil {
 		param.Headers[`Content-Type`] = `application/json`
 	} else {
@@ -75,19 +119,52 @@ func (this *HttpClass) PostJsonForString(param RequestParam) string {
 	return this.PostForString(param)
 }
 
-func (this *HttpClass) PostForString(param RequestParam) string {
-	_, body := this.Post(param)
+func (this *HttpClass) MustPostForString(param RequestParam) string {
+	body, err := this.PostForString(param)
+	if err != nil {
+		panic(err)
+	}
 	return body
 }
 
-func (this *HttpClass) PostMultipartForMap(param PostMultipartParam) map[string]interface{} {
-	body := this.PostMultipartForString(param)
-	return go_json.Json.ParseToMap(body)
+func (this *HttpClass) PostForString(param RequestParam) (string, error) {
+	_, body, err := this.Post(param)
+	if err != nil {
+		return ``, err
+	}
+	return body, nil
 }
 
-func (this *HttpClass) PostMultipartForString(param PostMultipartParam) string {
-	_, body := this.PostMultipart(param)
+func (this *HttpClass) MustPostMultipartForMap(param PostMultipartParam) map[string]interface{} {
+	body, err := this.PostMultipartForMap(param)
+	if err != nil {
+		panic(err)
+	}
 	return body
+}
+
+func (this *HttpClass) PostMultipartForMap(param PostMultipartParam) (map[string]interface{}, error) {
+	body, err := this.PostMultipartForString(param)
+	if err != nil {
+		return nil, err
+	}
+	return go_json.Json.ParseToMap(body), nil
+}
+
+func (this *HttpClass) MustPostMultipartForString(param PostMultipartParam) string {
+	body, err := this.PostMultipartForString(param)
+	if err != nil {
+		panic(err)
+	}
+	return body
+}
+
+func (this *HttpClass) PostMultipartForString(param PostMultipartParam) (string, error) {
+	_, body, err := this.PostMultipart(param)
+	if err != nil {
+		return ``, err
+	}
+	return body, nil
 }
 
 type BytesFileInfo struct {
@@ -108,7 +185,15 @@ type PostMultipartParam struct {
 	BasicAuth *BasicAuth
 }
 
-func (this *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, string) {
+func (this *HttpClass) MustPostMultipart(param PostMultipartParam) (*http.Response, string) {
+	res, body, err := this.PostMultipart(param)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+	}
+	return res, body
+}
+
+func (this *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, string, error) {
 	request := this.RequestClient.Post(param.Url).Type("multipart")
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
@@ -126,12 +211,20 @@ func (this *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, 
 	}
 	response, body, errs := request.Send(param.Params).End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostMultipart ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
+		return nil, ``, errs[0]
 	}
-	return response, body
+	return response, body, nil
 }
 
-func (this *HttpClass) PostJsonForStruct(param RequestParam, struct_ interface{}) *http.Response {
+func (this *HttpClass) MustPostJsonForStruct(param RequestParam, struct_ interface{}) *http.Response {
+	res, err := this.PostJsonForStruct(param, struct_)
+	if err != nil {
+		panic(err)
+	}
+	return res
+}
+
+func (this *HttpClass) PostJsonForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
 	if param.Headers != nil {
 		param.Headers[`Content-Type`] = `application/json`
 	} else {
@@ -142,7 +235,15 @@ func (this *HttpClass) PostJsonForStruct(param RequestParam, struct_ interface{}
 	return this.PostForStruct(param, struct_)
 }
 
-func (this *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) *http.Response {
+func (this *HttpClass) MustPostForStruct(param RequestParam, struct_ interface{}) *http.Response {
+	res, err := this.PostForStruct(param, struct_)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+	}
+	return res
+}
+
+func (this *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
 	request := this.RequestClient.Post(param.Url)
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
@@ -155,12 +256,20 @@ func (this *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) *h
 	}
 	response, _, errs := request.Send(param.Params).EndStruct(struct_)
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PostForStruct ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
+		return nil, errs[0]
 	}
-	return response
+	return response, nil
 }
 
-func (this *HttpClass) Post(param RequestParam) (*http.Response, string) {
+func (this *HttpClass) MustPost(param RequestParam) (*http.Response, string) {
+	res, body, err := this.Post(param)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+	}
+	return res, body
+}
+
+func (this *HttpClass) Post(param RequestParam) (*http.Response, string, error) {
 	request := this.RequestClient.Post(param.Url)
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
@@ -173,23 +282,46 @@ func (this *HttpClass) Post(param RequestParam) (*http.Response, string) {
 	}
 	response, body, errs := request.Send(param.Params).End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`Post ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
+		return nil, ``, errs[0]
 	}
-	return response, body
+	return response, body, nil
 }
 
-func (this *HttpClass) GetForMap(param RequestParam) map[string]interface{} {
-	return go_json.Json.Parse(this.GetForString(param)).(map[string]interface{})
-}
-
-func (this *HttpClass) GetForString(param RequestParam) string {
-	_, body := this.Get(param)
+func (this *HttpClass) MustGetForMap(param RequestParam) map[string]interface{} {
+	body, err := this.GetForMap(param)
+	if err != nil {
+		panic(err)
+	}
 	return body
 }
 
-func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
+func (this *HttpClass) GetForMap(param RequestParam) (map[string]interface{}, error) {
+	body, err := this.GetForString(param)
+	if err != nil {
+		return nil, err
+	}
+	return go_json.Json.Parse(body).(map[string]interface{}), nil
+}
+
+func (this *HttpClass) MustGetForString(param RequestParam) string {
+	body, err := this.GetForString(param)
+	if err != nil {
+		panic(err)
+	}
+	return body
+}
+
+func (this *HttpClass) GetForString(param RequestParam) (string, error) {
+	_, body, err := this.Get(param)
+	if err != nil {
+		return ``, err
+	}
+	return body, nil
+}
+
+func (this *HttpClass) interfaceToUrlQuery(params interface{}) (string, error) {
 	if params == nil {
-		return ``
+		return ``, errors.New(`Params is nil`)
 	}
 	type_ := reflect.TypeOf(params)
 	kind := type_.Kind()
@@ -203,16 +335,28 @@ func (this *HttpClass) interfaceToUrlQuery(params interface{}) string {
 	} else if kind == reflect.Ptr {
 		return this.interfaceToUrlQuery(reflect.ValueOf(params).Elem().Interface())
 	} else {
-		panic(errors.New(`Params type error`))
+		return ``, errors.New(`Params type error`)
 	}
 	if 0 < len(strParams) {
 		strParams = string([]rune(strParams)[:len(strParams)-1])
 	}
-	return `?` + strParams
+	return `?` + strParams, nil
 }
 
-func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
-	request := this.RequestClient.Get(param.Url + this.interfaceToUrlQuery(param.Params))
+func (this *HttpClass) MustGet(param RequestParam) (*http.Response, string) {
+	res, body, err := this.Get(param)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+	}
+	return res, body
+}
+
+func (this *HttpClass) Get(param RequestParam) (*http.Response, string, error) {
+	urlParams, err := this.interfaceToUrlQuery(param.Params)
+	if err != nil {
+		return nil, ``, err
+	}
+	request := this.RequestClient.Get(param.Url + urlParams)
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
 		for key, value := range param.Headers {
@@ -224,13 +368,25 @@ func (this *HttpClass) Get(param RequestParam) (*http.Response, string) {
 	}
 	response, body, errs := request.End()
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`Get ERROR!! Url: %s, error: %v`, param.Url, errs[0])))
+		return nil, ``, errs[0]
 	}
-	return response, body
+	return response, body, nil
 }
 
-func (this *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) *http.Response {
-	request := this.RequestClient.Get(param.Url + this.interfaceToUrlQuery(param.Params))
+func (this *HttpClass) MustGetForStruct(param RequestParam, struct_ interface{}) *http.Response {
+	res, err := this.GetForStruct(param, struct_)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+	}
+	return res
+}
+
+func (this *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
+	urlParams, err := this.interfaceToUrlQuery(param.Params)
+	if err != nil {
+		return nil, err
+	}
+	request := this.RequestClient.Get(param.Url + urlParams)
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
 		for key, value := range param.Headers {
@@ -242,12 +398,20 @@ func (this *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) *ht
 	}
 	response, _, errs := request.EndStruct(struct_)
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`GetForStruct ERROR!! Url: %s, error: %v`, param.Url, errs[0])))
+		return nil, errs[0]
 	}
-	return response
+	return response, nil
 }
 
-func (this *HttpClass) PutForStruct(param RequestParam, struct_ interface{}) *http.Response {
+func (this *HttpClass) MustPutForStruct(param RequestParam, struct_ interface{}) *http.Response {
+	res, err := this.PutForStruct(param, struct_)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+	}
+	return res
+}
+
+func (this *HttpClass) PutForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
 	request := this.RequestClient.Put(param.Url)
 	request.Debug = go_application.Application.Debug
 	if param.Headers != nil {
@@ -260,7 +424,7 @@ func (this *HttpClass) PutForStruct(param RequestParam, struct_ interface{}) *ht
 	}
 	response, _, errs := request.Send(param.Params).EndStruct(struct_)
 	if len(errs) > 0 {
-		panic(errors.New(fmt.Sprintf(`PutForStruct ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, errs[0])))
+		return nil, errs[0]
 	}
-	return response
+	return response, nil
 }
