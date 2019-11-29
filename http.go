@@ -321,7 +321,7 @@ func (this *HttpClass) GetForString(param RequestParam) (string, error) {
 
 func (this *HttpClass) interfaceToUrlQuery(params interface{}) (string, error) {
 	if params == nil {
-		return ``, errors.New(`Params is nil`)
+		return ``, nil
 	}
 	type_ := reflect.TypeOf(params)
 	kind := type_.Kind()
