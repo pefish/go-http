@@ -16,10 +16,8 @@ github.com/pefish/go-application v0.1.0 h1:xzr+g74pqrwMe1TFTOnBLgSD3nWgFWe7ACGqw
 github.com/pefish/go-application v0.1.0/go.mod h1:bIM667i1fBpkJxZWE0lTbYs/FW4O9YgnW5gj4sy33ko=
 github.com/pefish/go-format v0.1.1 h1:ERqLlOXdUrppAtA72p6lz0owlmYEAfVVpJohcgvF6gY=
 github.com/pefish/go-format v0.1.1/go.mod h1:IENENkJAeyzmjOeazCSYuFO4RkC4mzA3t0iENc9b344=
-github.com/pefish/go-json v0.1.1 h1:TjrjuVcST8K+j83OeIdJPKalQjIyRJHNda6L9Am2Rik=
-github.com/pefish/go-json v0.1.1/go.mod h1:7plXZcvUPrBT5EdIwXNM9F00TL9ixOG4OJHkAF8TcL8=
-github.com/pefish/go-reflect v0.0.7 h1:Svy8xuxJW3WQmDPD1KV+pHg77LsgpSpx0fwHa+GGHw8=
-github.com/pefish/go-reflect v0.0.7/go.mod h1:lv3gz/Zh2FsqCq8jqzdCgYpoM41AjE90HtknRbkXhjQ=
+github.com/pefish/go-json v0.1.2 h1:AxnTvOyyTMHLp/DUsG08g6eGdTBSQrEFLIquL0MFUEE=
+github.com/pefish/go-json v0.1.2/go.mod h1:tw3I12A75Lx3QG+s2hYKfn+svhb7yQVZyxAPh5Ed6F8=
 github.com/pefish/go-reflect v0.1.1 h1:ga1xuOwahhGbu5qwoYNeiaTFhYr60Epmxp74YGMpfPk=
 github.com/pefish/go-reflect v0.1.1/go.mod h1:lv3gz/Zh2FsqCq8jqzdCgYpoM41AjE90HtknRbkXhjQ=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=

@@ -6,6 +6,7 @@ import (
 	"github.com/parnurzeal/gorequest"
 	"github.com/pefish/go-application"
 	"github.com/pefish/go-format"
+
 	"github.com/pefish/go-json"
 	"github.com/pefish/go-reflect"
 	"net/http"
@@ -81,7 +82,11 @@ func (this *HttpClass) PostJsonForMap(param RequestParam) (map[string]interface{
 	if err != nil {
 		return nil, err
 	}
-	return go_json.Json.Parse(body).(map[string]interface{}), nil
+	map_, err := go_json.Json.ParseToMap(body)
+	if err != nil {
+		return nil, err
+	}
+	return map_, nil
 }
 
 func (this *HttpClass) MustPostForMap(param RequestParam) map[string]interface{} {
@@ -97,7 +102,11 @@ func (this *HttpClass) PostForMap(param RequestParam) (map[string]interface{}, e
 	if err != nil {
 		return nil, err
 	}
-	return go_json.Json.Parse(body).(map[string]interface{}), nil
+	map_, err := go_json.Json.ParseToMap(body)
+	if err != nil {
+		return nil, err
+	}
+	return map_, nil
 }
 
 func (this *HttpClass) MustPostJsonForString(param RequestParam) string {
@@ -148,7 +157,11 @@ func (this *HttpClass) PostMultipartForMap(param PostMultipartParam) (map[string
 	if err != nil {
 		return nil, err
 	}
-	return go_json.Json.ParseToMap(body), nil
+	map_, err := go_json.Json.ParseToMap(body)
+	if err != nil {
+		return nil, err
+	}
+	return map_, nil
 }
 
 func (this *HttpClass) MustPostMultipartForString(param PostMultipartParam) string {
@@ -300,7 +313,11 @@ func (this *HttpClass) GetForMap(param RequestParam) (map[string]interface{}, er
 	if err != nil {
 		return nil, err
 	}
-	return go_json.Json.Parse(body).(map[string]interface{}), nil
+	map_, err := go_json.Json.ParseToMap(body)
+	if err != nil {
+		return nil, err
+	}
+	return map_, nil
 }
 
 func (this *HttpClass) MustGetForString(param RequestParam) string {
@@ -327,7 +344,11 @@ func (this *HttpClass) interfaceToUrlQuery(params interface{}) (string, error) {
 	kind := type_.Kind()
 	var strParams string
 	if kind == reflect.Map {
-		for key, value := range params.(map[string]interface{}) {
+		paramsMap, ok := params.(map[string]interface{})
+		if !ok {
+			return ``, errors.New(fmt.Sprintf(`%F cannot cast to map[string]interface{}`, params))
+		}
+		for key, value := range paramsMap {
 			strParams += key + "=" + go_reflect.Reflect.MustToString(value) + "&"
 		}
 	} else if kind == reflect.Struct {
