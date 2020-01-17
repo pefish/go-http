@@ -66,7 +66,7 @@ func (this *HttpClass) PostJson(param RequestParam) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return go_json.Json.Parse(body), nil
+	return go_json.Json.Parse(body)
 }
 
 func (this *HttpClass) MustPostJsonForMap(param RequestParam) map[string]interface{} {
