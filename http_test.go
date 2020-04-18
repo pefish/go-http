@@ -19,7 +19,7 @@ func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 		B string `json:"b"`
 		C uint64 `json:"c"`
 	}
-	result := NewHttpRequester().interfaceToUrlQuery(Test{
+	result, _ := NewHttpRequester(WithIsDebug(true)).interfaceToUrlQuery(Test{
 		A: `11`,
 		B: `22`,
 		C: 123,
@@ -29,8 +29,9 @@ func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 }
 
 func TestHttpClass_PostForString(t *testing.T) {
-	fmt.Println(NewHttpRequester().PostForString(RequestParam{
+	_, body, _ := NewHttpRequester(WithIsDebug(true)).Post(RequestParam{
 		Url:    `http://www.baidu.com`,
 		Params: nil,
-	}))
+	})
+	fmt.Println(body)
 }
