@@ -163,10 +163,7 @@ func (httpInstance *HttpClass) decorateRequest(request *gorequest.SuperAgent, pa
 	request.Debug = httpInstance.isDebug
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			str, err := go_reflect.Reflect.ToString(value)
-			if err != nil {
-				return err
-			}
+			str := go_reflect.Reflect.ToString(value)
 			request.Set(key, str)
 		}
 	}
@@ -189,10 +186,7 @@ func (httpInstance *HttpClass) interfaceToUrlQuery(params interface{}) (string, 
 			return ``, errors.New(fmt.Sprintf(`%F cannot cast to map[string]interface{}`, params))
 		}
 		for key, value := range paramsMap {
-			str, err := go_reflect.Reflect.ToString(value)
-			if err != nil {
-				return ``, err
-			}
+			str := go_reflect.Reflect.ToString(value)
 			strParams += key + "=" + str + "&"
 		}
 	} else if kind == reflect.Struct {
