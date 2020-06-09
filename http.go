@@ -95,7 +95,9 @@ func (httpInstance *HttpClass) MustPostMultipart(param PostMultipartParam) (*htt
 }
 
 func (httpInstance *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, string, error) {
-	request := httpInstance.RequestClient.Post(param.Url).Type("multipart")
+	httpInstance.RequestClient.Method = gorequest.POST
+	httpInstance.RequestClient.Url = param.Url
+	request := httpInstance.RequestClient.Type("multipart")
 	err := httpInstance.decorateRequest(request, RequestParam{
 		Url:       param.Url,
 		Params:    param.Params,
@@ -126,12 +128,13 @@ func (httpInstance *HttpClass) MustPostForStruct(param RequestParam, struct_ int
 }
 
 func (httpInstance *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
-	request := httpInstance.RequestClient.Post(param.Url)
-	err := httpInstance.decorateRequest(request, param)
+	httpInstance.RequestClient.Method = gorequest.POST
+	httpInstance.RequestClient.Url = param.Url
+	err := httpInstance.decorateRequest(httpInstance.RequestClient, param)
 	if err != nil {
 		return nil, err
 	}
-	response, _, errs := request.Send(param.Params).EndStruct(struct_)
+	response, _, errs := httpInstance.RequestClient.Send(param.Params).EndStruct(struct_)
 	if len(errs) > 0 {
 		return nil, errs[0]
 	}
@@ -147,12 +150,13 @@ func (httpInstance *HttpClass) MustPost(param RequestParam) (*http.Response, str
 }
 
 func (httpInstance *HttpClass) Post(param RequestParam) (*http.Response, string, error) {
-	request := httpInstance.RequestClient.Post(param.Url)
-	err := httpInstance.decorateRequest(request, param)
+	httpInstance.RequestClient.Method = gorequest.POST
+	httpInstance.RequestClient.Url = param.Url
+	err := httpInstance.decorateRequest(httpInstance.RequestClient, param)
 	if err != nil {
 		return nil, ``, err
 	}
-	response, body, errs := request.Send(param.Params).End()
+	response, body, errs := httpInstance.RequestClient.Send(param.Params).End()
 	if len(errs) > 0 {
 		return nil, ``, errs[0]
 	}
@@ -215,12 +219,13 @@ func (httpInstance *HttpClass) Get(param RequestParam) (*http.Response, string, 
 	if err != nil {
 		return nil, ``, err
 	}
-	request := httpInstance.RequestClient.Get(param.Url + urlParams)
-	err = httpInstance.decorateRequest(request, param)
+	httpInstance.RequestClient.Method = gorequest.GET
+	httpInstance.RequestClient.Url = param.Url+urlParams
+	err = httpInstance.decorateRequest(httpInstance.RequestClient, param)
 	if err != nil {
 		return nil, ``, err
 	}
-	response, body, errs := request.End()
+	response, body, errs := httpInstance.RequestClient.End()
 	if len(errs) > 0 {
 		return nil, ``, errs[0]
 	}
@@ -240,12 +245,13 @@ func (httpInstance *HttpClass) GetForStruct(param RequestParam, struct_ interfac
 	if err != nil {
 		return nil, err
 	}
-	request := httpInstance.RequestClient.Get(param.Url + urlParams)
-	err = httpInstance.decorateRequest(request, param)
+	httpInstance.RequestClient.Method = gorequest.GET
+	httpInstance.RequestClient.Url = param.Url+urlParams
+	err = httpInstance.decorateRequest(httpInstance.RequestClient, param)
 	if err != nil {
 		return nil, err
 	}
-	response, _, errs := request.EndStruct(struct_)
+	response, _, errs := httpInstance.RequestClient.EndStruct(struct_)
 	if len(errs) > 0 {
 		return nil, errs[0]
 	}

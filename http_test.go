@@ -3,15 +3,8 @@ package go_http
 import (
 	"fmt"
 	"testing"
-	"time"
 )
 
-func TestHttpClass_GetForString(t *testing.T) {
-	fmt.Println(NewHttpRequester(WithTimeout(10 * time.Second)).GetForString(RequestParam{
-		Url:    `http://www.baidu.com`,
-		Params: nil,
-	}))
-}
 
 func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 	type Test struct {
@@ -28,10 +21,13 @@ func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 
 }
 
-func TestHttpClass_PostForString(t *testing.T) {
-	_, body, _ := NewHttpRequester(WithIsDebug(true)).Post(RequestParam{
+func TestHttpClass_Post(t *testing.T) {
+	str := `{"side": "withdraw", "chain": "Pmeer"}`
+	requester := NewHttpRequester(WithIsDebug(true))
+	requester.RequestClient.BounceToRawString = true
+	requester.Post(RequestParam{
 		Url:    `http://www.baidu.com`,
-		Params: nil,
+		Params: str,
 	})
-	fmt.Println(body)
+	//fmt.Println(body)
 }
