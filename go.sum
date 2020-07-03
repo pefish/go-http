@@ -12,10 +12,10 @@ github.com/pefish/go-format v0.1.1 h1:ERqLlOXdUrppAtA72p6lz0owlmYEAfVVpJohcgvF6g
 github.com/pefish/go-format v0.1.1/go.mod h1:IENENkJAeyzmjOeazCSYuFO4RkC4mzA3t0iENc9b344=
 github.com/pefish/go-interface-logger v0.0.4 h1:dzBhn4Y5aOn86h4RseoPFa5C6lO0149LC8o3OdLkE1I=
 github.com/pefish/go-interface-logger v0.0.4/go.mod h1:OWmqpZPYoGn57lLAZLn8y6dFdD339YKge1+WxbzQ9bQ=
-github.com/pefish/go-reflect v0.1.1 h1:ga1xuOwahhGbu5qwoYNeiaTFhYr60Epmxp74YGMpfPk=
-github.com/pefish/go-reflect v0.1.1/go.mod h1:lv3gz/Zh2FsqCq8jqzdCgYpoM41AjE90HtknRbkXhjQ=
 github.com/pefish/go-reflect v0.2.0 h1:EUB7sDyRdAHkB8SxZcsLgkDgS1X/5yUrNFhNwSbPfBE=
 github.com/pefish/go-reflect v0.2.0/go.mod h1:KTxD5dhPvgUFiL+v2cxvYH/u4qEf7MPI+RouiiMNnRk=
+github.com/pefish/go-test-assert v0.0.1 h1:zWV2Hnn/Rtjf+bEOlyB8qF9ThJb7gmXpRPWEqJtjzjg=
+github.com/pefish/go-test-assert v0.0.1/go.mod h1:kfcsv5ag411u06gdV4iRKU8D0zOglian/DBacnCoQdc=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 h1:Jpy1PXuP99tXNrhbq2BaPz9B+jNAvH1JPQQpG/9GCXY=
