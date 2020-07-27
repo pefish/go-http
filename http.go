@@ -43,6 +43,8 @@ type HttpRequestOption struct {
 
 var defaultHttpRequestOption = HttpRequestOption{
 	timeout: 10 * time.Second,
+	logger:  go_interface_logger.DefaultLogger,
+	isDebug: false,
 }
 
 func WithTimeout(timeout time.Duration) HttpRequestOptionFunc {
@@ -238,7 +240,7 @@ func (httpInstance *HttpClass) Get(param RequestParam) (*http.Response, string, 
 		return nil, ``, err
 	}
 	httpInstance.requestClient.Method = gorequest.GET
-	httpInstance.requestClient.Url = param.Url+urlParams
+	httpInstance.requestClient.Url = param.Url + urlParams
 	err = httpInstance.decorateRequest(httpInstance.requestClient, param)
 	if err != nil {
 		return nil, ``, err
@@ -264,7 +266,7 @@ func (httpInstance *HttpClass) GetForStruct(param RequestParam, struct_ interfac
 		return nil, err
 	}
 	httpInstance.requestClient.Method = gorequest.GET
-	httpInstance.requestClient.Url = param.Url+urlParams
+	httpInstance.requestClient.Url = param.Url + urlParams
 	err = httpInstance.decorateRequest(httpInstance.requestClient, param)
 	if err != nil {
 		return nil, err
