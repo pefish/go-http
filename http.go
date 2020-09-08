@@ -1,10 +1,10 @@
 package go_http
 
 import (
-	"errors"
 	"fmt"
 	"github.com/pefish/go-format"
 	"github.com/pefish/go-http/gorequest"
+	"github.com/pkg/errors"
 
 	"github.com/pefish/go-interface-logger"
 	"github.com/pefish/go-reflect"
