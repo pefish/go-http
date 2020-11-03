@@ -174,7 +174,7 @@ func (httpInstance *HttpClass) Post(param RequestParam) (*http.Response, string,
 }
 
 func (httpInstance *HttpClass) decorateRequest(request *gorequest.SuperAgent, param RequestParam) error {
-	request.Debug = httpInstance.logger.IsDev()
+	request.Debug = httpInstance.logger.IsDebug()
 	if param.Headers != nil {
 		for key, value := range param.Headers {
 			str := go_reflect.Reflect.ToString(value)
