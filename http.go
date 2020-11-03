@@ -30,7 +30,6 @@ type IHttp interface {
 type HttpClass struct {
 	requestClient *gorequest.SuperAgent
 	logger        go_interface_logger.InterfaceLogger
-	isDebug       bool
 }
 
 type HttpRequestOptionFunc func(options *HttpRequestOption)
@@ -38,24 +37,16 @@ type HttpRequestOptionFunc func(options *HttpRequestOption)
 type HttpRequestOption struct {
 	timeout time.Duration
 	logger  go_interface_logger.InterfaceLogger
-	isDebug bool
 }
 
 var defaultHttpRequestOption = HttpRequestOption{
 	timeout: 10 * time.Second,
 	logger:  go_interface_logger.DefaultLogger,
-	isDebug: false,
 }
 
 func WithTimeout(timeout time.Duration) HttpRequestOptionFunc {
 	return func(option *HttpRequestOption) {
 		option.timeout = timeout
-	}
-}
-
-func WithIsDebug(isDebug bool) HttpRequestOptionFunc {
-	return func(option *HttpRequestOption) {
-		option.isDebug = isDebug
 	}
 }
 
@@ -73,7 +64,6 @@ func NewHttpRequester(opts ...HttpRequestOptionFunc) IHttp {
 	return &HttpClass{
 		requestClient: gorequest.New().Timeout(option.timeout),
 		logger:        option.logger,
-		isDebug:       option.isDebug,
 	}
 }
 
@@ -184,7 +174,7 @@ func (httpInstance *HttpClass) Post(param RequestParam) (*http.Response, string,
 }
 
 func (httpInstance *HttpClass) decorateRequest(request *gorequest.SuperAgent, param RequestParam) error {
-	request.Debug = httpInstance.isDebug
+	request.Debug = httpInstance.logger.IsDev()
 	if param.Headers != nil {
 		for key, value := range param.Headers {
 			str := go_reflect.Reflect.ToString(value)

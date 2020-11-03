@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/net/publicsuffix"
 	"moul.io/http2curl"
+	"github.com/google/uuid"
 )
 
 type Request *http.Request
@@ -1175,14 +1176,21 @@ func (s *SuperAgent) getResponseBytes() (Response, []byte, []error) {
 		s.Client.Transport = s.Transport
 	}
 
+	uuidStr := ""
 	// Log details of this request
 	if s.Debug {
+		u, err := uuid.NewUUID()
+		if err != nil {
+			s.Errors = append(s.Errors, err)
+			return nil, nil, s.Errors
+		}
+		uuidStr = u.String()
 		dump, err := httputil.DumpRequest(req, true)
 		s.logger.SetPrefix("[http] ")
 		if err != nil {
 			s.logger.Println("Error:", err)
 		} else {
-			s.logger.Printf("HTTP Request: %s", string(dump))
+			s.logger.Printf("[%s] HTTP Request: %s", uuidStr, string(dump))
 		}
 	}
 
@@ -1211,7 +1219,7 @@ func (s *SuperAgent) getResponseBytes() (Response, []byte, []error) {
 		if nil != err {
 			s.logger.Println("Error:", err)
 		} else {
-			s.logger.Printf("[%s] HTTP Response: %s", req.URL, string(dump))
+			s.logger.Printf("[%s] HTTP Response: %s", uuidStr, string(dump))
 		}
 	}
 

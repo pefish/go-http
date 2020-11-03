@@ -22,7 +22,7 @@ func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 
 func TestHttpClass_Post(t *testing.T) {
 	str := `{"side": "test", "chain": "test"}`
-	requester := NewHttpRequester(WithIsDebug(true))
+	requester := NewHttpRequester()
 	requester.GetRequestClient().BounceToRawString = true
 	_, body, err := requester.Post(RequestParam{
 		Url:    `http://www.baidu.com`,
