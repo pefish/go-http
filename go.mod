@@ -5,7 +5,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/pefish/go-format v0.1.3
-	github.com/pefish/go-interface-logger v0.0.8
+	github.com/pefish/go-logger v0.4.9
 	github.com/pefish/go-reflect v0.2.1
 	github.com/pefish/go-test-assert v0.0.1
 	github.com/pkg/errors v0.8.1

@@ -6,7 +6,7 @@ import (
 	"github.com/pefish/go-http/gorequest"
 	"github.com/pkg/errors"
 
-	"github.com/pefish/go-interface-logger"
+	"github.com/pefish/go-logger"
 	"github.com/pefish/go-reflect"
 	"net/http"
 	"reflect"
