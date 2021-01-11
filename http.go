@@ -28,19 +28,19 @@ type IHttp interface {
 
 type HttpClass struct {
 	timeout time.Duration
-	logger  go_interface_logger.InterfaceLogger
+	logger  go_logger.InterfaceLogger
 }
 
 type HttpRequestOptionFunc func(options *HttpRequestOption)
 
 type HttpRequestOption struct {
 	timeout time.Duration
-	logger  go_interface_logger.InterfaceLogger
+	logger  go_logger.InterfaceLogger
 }
 
 var defaultHttpRequestOption = HttpRequestOption{
 	timeout: 10 * time.Second,
-	logger:  go_interface_logger.DefaultLogger,
+	logger:  go_logger.DefaultLogger,
 }
 
 func WithTimeout(timeout time.Duration) HttpRequestOptionFunc {
@@ -49,7 +49,7 @@ func WithTimeout(timeout time.Duration) HttpRequestOptionFunc {
 	}
 }
 
-func WithLogger(logger go_interface_logger.InterfaceLogger) HttpRequestOptionFunc {
+func WithLogger(logger go_logger.InterfaceLogger) HttpRequestOptionFunc {
 	return func(option *HttpRequestOption) {
 		option.logger = logger
 	}
