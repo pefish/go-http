@@ -5,6 +5,7 @@ import (
 	"github.com/pefish/go-format"
 	"github.com/pefish/go-http/gorequest"
 	"github.com/pkg/errors"
+	"os"
 
 	"github.com/pefish/go-logger"
 	"github.com/pefish/go-reflect"
@@ -33,6 +34,7 @@ type IHttp interface {
 type HttpClass struct {
 	timeout time.Duration
 	logger  go_logger.InterfaceLogger
+	httpProxy string
 }
 
 type HttpRequestOptionFunc func(options *HttpRequestOption)
@@ -40,6 +42,7 @@ type HttpRequestOptionFunc func(options *HttpRequestOption)
 type HttpRequestOption struct {
 	timeout time.Duration
 	logger  go_logger.InterfaceLogger
+	httpProxy string
 }
 
 var defaultHttpRequestOption = HttpRequestOption{
@@ -59,14 +62,28 @@ func WithLogger(logger go_logger.InterfaceLogger) HttpRequestOptionFunc {
 	}
 }
 
+func WithHttpProxy(proxyUrl string) HttpRequestOptionFunc {
+	return func(option *HttpRequestOption) {
+		option.httpProxy = proxyUrl
+	}
+}
+
 func NewHttpRequester(opts ...HttpRequestOptionFunc) IHttp {
 	option := defaultHttpRequestOption
 	for _, o := range opts {
 		o(&option)
 	}
+	if option.httpProxy == "" {
+		if os.Getenv("http_proxy") != "" {
+			option.httpProxy = os.Getenv("http_proxy")
+		} else if os.Getenv("HTTP_PROXY") != "" {
+			option.httpProxy = os.Getenv("HTTP_PROXY")
+		}
+	}
 	return &HttpClass{
 		timeout: option.timeout,
 		logger:  option.logger,
+		httpProxy: option.httpProxy,
 	}
 }
 
@@ -104,7 +121,7 @@ func (httpInstance *HttpClass) MustPostMultipart(param PostMultipartParam) (*htt
 }
 
 func (httpInstance *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, string, error) {
-	requestClient := gorequest.New().Timeout(httpInstance.timeout)
+	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	requestClient.Method = gorequest.POST
 	requestClient.Url = param.Url
 	request := requestClient.Type("multipart")
@@ -138,7 +155,7 @@ func (httpInstance *HttpClass) MustPostForStruct(param RequestParam, struct_ int
 }
 
 func (httpInstance *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
-	requestClient := gorequest.New().Timeout(httpInstance.timeout)
+	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	requestClient.Method = gorequest.POST
 	requestClient.Url = param.Url
 	err := httpInstance.decorateRequest(requestClient, param)
@@ -177,7 +194,7 @@ func (httpInstance *HttpClass) MustPostForBytes(param RequestParam) (*http.Respo
 }
 
 func (httpInstance *HttpClass) PostForBytes(param RequestParam) (*http.Response, []byte, error) {
-	requestClient := gorequest.New().Timeout(httpInstance.timeout)
+	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	requestClient.Method = gorequest.POST
 	requestClient.Url = param.Url
 	err := httpInstance.decorateRequest(requestClient, param)
@@ -265,7 +282,7 @@ func (httpInstance *HttpClass) MustGetForBytes(param RequestParam) (*http.Respon
 }
 
 func (httpInstance *HttpClass) GetForBytes(param RequestParam) (*http.Response, []byte, error) {
-	requestClient := gorequest.New().Timeout(httpInstance.timeout)
+	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	urlParams, err := interfaceToUrlQuery(param.Params)
 	if err != nil {
 		return nil, nil, err
@@ -292,7 +309,7 @@ func (httpInstance *HttpClass) MustGetForStruct(param RequestParam, struct_ inte
 }
 
 func (httpInstance *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
-	requestClient := gorequest.New().Timeout(httpInstance.timeout)
+	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	urlParams, err := interfaceToUrlQuery(param.Params)
 	if err != nil {
 		return nil, err
