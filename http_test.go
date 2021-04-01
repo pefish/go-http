@@ -33,14 +33,26 @@ func TestHttpClass_Post(t *testing.T) {
 }
 
 func TestHttpClass_Proxy(t *testing.T) {
+	//var client http.Client
+	//req, err := http.NewRequest("GET", "http://ip.me", nil)
+	//test.Equal(t, nil, err)
+	//req.Header.Add("User-Agent", "curl/7.64.1")
+	//resp, err := client.Do(req)
+	//test.Equal(t, nil, err)
+	//b, err := ioutil.ReadAll(resp.Body)
+	//test.Equal(t, nil, err)
+	//fmt.Println(2, string(b))
+
 	requester := NewHttpRequester()
 	//requester := NewHttpRequester(WithHttpProxy("http://127.0.0.1:1087"))
 	_, body, err := requester.Get(RequestParam{
-		Url:    `http://ip.me`,
+		Url:    `https://ip.me`,
 		Headers: map[string]interface{}{
 			"User-Agent": "curl/7.64.1",
 		},
 	})
 	test.Equal(t, nil, err)
-	fmt.Println(body)
+	fmt.Println(1, body)
+
+
 }

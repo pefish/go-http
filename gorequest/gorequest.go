@@ -3,13 +3,13 @@ package gorequest
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httputil"
@@ -22,10 +22,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"golang.org/x/net/publicsuffix"
 	"moul.io/http2curl"
-	"github.com/google/uuid"
 )
 
 type Request *http.Request
@@ -77,7 +77,7 @@ type SuperAgent struct {
 	BounceToRawString    bool
 	RawString            string
 	Client               *http.Client
-	Transport            *http.Transport
+	parsedProxyUrl            *url.URL
 	Cookies              []*http.Cookie
 	Errors               []error
 	BasicAuth            struct{ Username, Password string }
@@ -89,7 +89,6 @@ type SuperAgent struct {
 	isClone              bool
 }
 
-var DisableTransportSwap = false
 
 // Used to create a new SuperAgent object.
 func New() *SuperAgent {
@@ -111,7 +110,6 @@ func New() *SuperAgent {
 		FileData:          make([]File, 0),
 		BounceToRawString: false,
 		Client:            &http.Client{Jar: jar},
-		Transport:         &http.Transport{},
 		Cookies:           make([]*http.Cookie, 0),
 		Errors:            nil,
 		BasicAuth:         struct{ Username, Password string }{},
@@ -120,8 +118,6 @@ func New() *SuperAgent {
 		logger:            log.New(os.Stderr, "[gorequest]", log.LstdFlags),
 		isClone:           false,
 	}
-	// disable keep alives by default, see this issue https://github.com/parnurzeal/gorequest/issues/75
-	s.Transport.DisableKeepAlives = true
 	return s
 }
 
@@ -220,7 +216,6 @@ func (s *SuperAgent) Clone() *SuperAgent {
 		BounceToRawString:    s.BounceToRawString,
 		RawString:            s.RawString,
 		Client:               s.Client,
-		Transport:            s.Transport,
 		Cookies:              shallowCopyCookies(s.Cookies),
 		Errors:               shallowCopyErrors(s.Errors),
 		BasicAuth:            s.BasicAuth,
@@ -593,19 +588,6 @@ func (s *SuperAgent) Param(key string, value string) *SuperAgent {
 	return s
 }
 
-// Set TLSClientConfig for underling Transport.
-// One example is you can use it to disable security check (https):
-//
-//      gorequest.New().TLSClientConfig(&tls.Config{ InsecureSkipVerify: true}).
-//        Get("https://disable-security-check.com").
-//        End()
-//
-func (s *SuperAgent) TLSClientConfig(config *tls.Config) *SuperAgent {
-	s.safeModifyTransport()
-	s.Transport.TLSClientConfig = config
-	return s
-}
-
 // Proxy function accepts a proxy url string to setup proxy url for any request.
 // It provides a convenience way to setup proxy which have advantages over usual old ways.
 // One example is you might try to set `http_proxy` environment. This means you are setting proxy up for all the requests.
@@ -626,12 +608,8 @@ func (s *SuperAgent) Proxy(proxyUrl string) *SuperAgent {
 	parsedProxyUrl, err := url.Parse(proxyUrl)
 	if err != nil {
 		s.Errors = append(s.Errors, err)
-	} else if proxyUrl == "" {
-		s.safeModifyTransport()
-		s.Transport.Proxy = nil
-	} else {
-		s.safeModifyTransport()
-		s.Transport.Proxy = http.ProxyURL(parsedProxyUrl)
+	} else if proxyUrl != "" {
+		s.parsedProxyUrl = parsedProxyUrl
 	}
 	return s
 }
@@ -1171,10 +1149,24 @@ func (s *SuperAgent) getResponseBytes() (Response, []byte, []error) {
 		return nil, nil, s.Errors
 	}
 
-	// Set Transport
-	if !DisableTransportSwap {
-		s.Client.Transport = s.Transport
+	transport := &http.Transport{
+		DisableKeepAlives: true,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
 	}
+	if s.parsedProxyUrl != nil {
+		transport.Proxy = http.ProxyURL(s.parsedProxyUrl)
+	} else {
+		transport.Proxy = http.ProxyFromEnvironment
+	}
+	s.Client.Transport = transport
 
 	uuidStr := ""
 	// Log details of this request

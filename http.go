@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"github.com/pefish/go-format"
 	"github.com/pefish/go-http/gorequest"
-	"github.com/pkg/errors"
-	"os"
-
 	"github.com/pefish/go-logger"
 	"github.com/pefish/go-reflect"
+	"github.com/pkg/errors"
 	"net/http"
 	"reflect"
 	"time"
@@ -72,13 +70,6 @@ func NewHttpRequester(opts ...HttpRequestOptionFunc) IHttp {
 	option := defaultHttpRequestOption
 	for _, o := range opts {
 		o(&option)
-	}
-	if option.httpProxy == "" {
-		if os.Getenv("http_proxy") != "" {
-			option.httpProxy = os.Getenv("http_proxy")
-		} else if os.Getenv("HTTP_PROXY") != "" {
-			option.httpProxy = os.Getenv("HTTP_PROXY")
-		}
 	}
 	return &HttpClass{
 		timeout: option.timeout,
