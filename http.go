@@ -2,10 +2,10 @@ package go_http
 
 import (
 	"fmt"
-	"github.com/pefish/go-format"
+	go_format "github.com/pefish/go-format"
 	"github.com/pefish/go-http/gorequest"
 	"github.com/pefish/go-logger"
-	"github.com/pefish/go-reflect"
+	go_reflect "github.com/pefish/go-reflect"
 	"github.com/pkg/errors"
 	"net/http"
 	"reflect"
