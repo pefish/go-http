@@ -1,6 +1,7 @@
 package go_http
 
 import (
+	"encoding/json"
 	"fmt"
 	go_format "github.com/pefish/go-format"
 	"github.com/pefish/go-http/gorequest"
@@ -239,6 +240,17 @@ func interfaceToUrlQuery(params interface{}) (string, error) {
 		return interfaceToUrlQuery(go_format.Format.StructToMap(params))
 	} else if kind == reflect.Ptr {
 		return interfaceToUrlQuery(reflect.ValueOf(params).Elem().Interface())
+	} else if kind == reflect.String {
+		paramsStr := params.(string)
+		if paramsStr == "" {
+			return "", nil
+		}
+		b := make(map[string]interface{})
+		err := json.Unmarshal([]byte(paramsStr), &b)
+		if err != nil {
+			return "", err
+		}
+		return interfaceToUrlQuery(b)
 	} else {
 		return ``, errors.New(`Params type error`)
 	}
