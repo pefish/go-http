@@ -26,8 +26,8 @@ type IHttp interface {
 	Get(param RequestParam) (*http.Response, string, error)
 	MustGetForBytes(param RequestParam) (*http.Response, []byte)
 	GetForBytes(param RequestParam) (*http.Response, []byte, error)
-	MustGetForStruct(param RequestParam, struct_ interface{}) *http.Response
-	GetForStruct(param RequestParam, struct_ interface{}) (*http.Response, error)
+	MustGetForObject(param RequestParam, obj interface{}) *http.Response
+	GetForObject(param RequestParam, obj interface{}) (*http.Response, error)
 }
 
 type HttpClass struct {
@@ -303,15 +303,15 @@ func (httpInstance *HttpClass) GetForBytes(param RequestParam) (*http.Response, 
 	return response, bodyBytes, nil
 }
 
-func (httpInstance *HttpClass) MustGetForStruct(param RequestParam, struct_ interface{}) *http.Response {
-	res, err := httpInstance.GetForStruct(param, struct_)
+func (httpInstance *HttpClass) MustGetForObject(param RequestParam, struct_ interface{}) *http.Response {
+	res, err := httpInstance.GetForObject(param, struct_)
 	if err != nil {
 		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
 	}
 	return res
 }
 
-func (httpInstance *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
+func (httpInstance *HttpClass) GetForObject(param RequestParam, struct_ interface{}) (*http.Response, error) {
 	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	urlParams, err := interfaceToUrlQuery(param.Params)
 	if err != nil {
