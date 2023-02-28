@@ -16,6 +16,7 @@ import (
 type IHttp interface {
 	MustPostMultipart(param PostMultipartParam) (*http.Response, string)
 	PostMultipart(param PostMultipartParam) (*http.Response, string, error)
+	PostMultipartForStruct(param PostMultipartParam, struct_ interface{}) (*http.Response, error)
 	MustPostForStruct(param RequestParam, struct_ interface{}) *http.Response
 	PostForStruct(param RequestParam, struct_ interface{}) (*http.Response, error)
 	MustPost(param RequestParam) (*http.Response, string)
