@@ -112,7 +112,7 @@ func (httpInstance *HttpClass) MustPostMultipart(param PostMultipartParam) (*htt
 	return res, body
 }
 
-func (httpInstance *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, string, error) {
+func (httpInstance *HttpClass) makeMultipartRequest(param PostMultipartParam) (*gorequest.SuperAgent, error) {
 	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	requestClient.Method = gorequest.POST
 	requestClient.Url = param.Url
@@ -124,18 +124,38 @@ func (httpInstance *HttpClass) PostMultipart(param PostMultipartParam) (*http.Re
 		BasicAuth: param.BasicAuth,
 	})
 	if err != nil {
-		return nil, ``, err
+		return nil, err
 	}
 	for keyName, fileArr := range param.Files {
 		for _, file := range fileArr {
 			request = request.SendFile(file.Bytes, file.FileName, keyName)
 		}
 	}
+	return request, nil
+}
+
+func (httpInstance *HttpClass) PostMultipart(param PostMultipartParam) (*http.Response, string, error) {
+	request, err := httpInstance.makeMultipartRequest(param)
+	if err != nil {
+		return nil, "", err
+	}
 	response, body, errs := request.Send(param.Params).End()
 	if len(errs) > 0 {
 		return nil, ``, errs[0]
 	}
 	return response, body, nil
+}
+
+func (httpInstance *HttpClass) PostMultipartForStruct(param PostMultipartParam, struct_ interface{}) (*http.Response, error) {
+	request, err := httpInstance.makeMultipartRequest(param)
+	if err != nil {
+		return nil, err
+	}
+	response, _, errs := request.Send(param.Params).EndStruct(struct_)
+	if len(errs) > 0 {
+		return nil, errs[0]
+	}
+	return response, nil
 }
 
 func (httpInstance *HttpClass) MustPostForStruct(param RequestParam, struct_ interface{}) *http.Response {
