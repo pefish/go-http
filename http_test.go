@@ -2,10 +2,10 @@ package go_http
 
 import (
 	"fmt"
+	go_logger "github.com/pefish/go-logger"
 	"github.com/pefish/go-test-assert"
 	"testing"
 )
-
 
 func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 	type Test struct {
@@ -23,7 +23,7 @@ func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 
 func TestHttpClass_Post(t *testing.T) {
 	str := `{"side": "test", "chain": "test"}`
-	requester := NewHttpRequester()
+	requester := NewHttpRequester(WithLogger(go_logger.Logger.CloneWithLevel("debug")))
 	_, body, err := requester.Post(RequestParam{
 		Url:    `http://www.baidu.com`,
 		Params: str,
@@ -46,13 +46,12 @@ func TestHttpClass_Proxy(t *testing.T) {
 	requester := NewHttpRequester()
 	//requester := NewHttpRequester(WithHttpProxy("http://127.0.0.1:1087"))
 	_, body, err := requester.Get(RequestParam{
-		Url:    `https://ip.me`,
+		Url: `https://ip.me`,
 		Headers: map[string]interface{}{
 			"User-Agent": "curl/7.64.1",
 		},
 	})
 	test.Equal(t, nil, err)
 	fmt.Println(1, body)
-
 
 }

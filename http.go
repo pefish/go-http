@@ -114,7 +114,7 @@ func (httpInstance *HttpClass) MustPostMultipart(param PostMultipartParam) (*htt
 }
 
 func (httpInstance *HttpClass) makeMultipartRequest(param PostMultipartParam) (*gorequest.SuperAgent, error) {
-	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
+	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	requestClient.Method = gorequest.POST
 	requestClient.Url = param.Url
 	request := requestClient.Type("multipart")
@@ -168,7 +168,7 @@ func (httpInstance *HttpClass) MustPostForStruct(param RequestParam, struct_ int
 }
 
 func (httpInstance *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
-	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
+	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	requestClient.Method = gorequest.POST
 	requestClient.Url = param.Url
 	err := httpInstance.decorateRequest(requestClient, param)
@@ -207,7 +207,7 @@ func (httpInstance *HttpClass) MustPostForBytes(param RequestParam) (*http.Respo
 }
 
 func (httpInstance *HttpClass) PostForBytes(param RequestParam) (*http.Response, []byte, error) {
-	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
+	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	requestClient.Method = gorequest.POST
 	requestClient.Url = param.Url
 	err := httpInstance.decorateRequest(requestClient, param)
@@ -306,7 +306,7 @@ func (httpInstance *HttpClass) MustGetForBytes(param RequestParam) (*http.Respon
 }
 
 func (httpInstance *HttpClass) GetForBytes(param RequestParam) (*http.Response, []byte, error) {
-	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
+	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	urlParams, err := interfaceToUrlQuery(param.Params)
 	if err != nil {
 		return nil, nil, err
@@ -333,7 +333,7 @@ func (httpInstance *HttpClass) MustGetForStruct(param RequestParam, struct_ inte
 }
 
 func (httpInstance *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
-	requestClient := gorequest.New().Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
+	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	urlParams, err := interfaceToUrlQuery(param.Params)
 	if err != nil {
 		return nil, err
