@@ -16,19 +16,19 @@ import (
 type IHttp interface {
 	MustPostMultipart(param PostMultipartParam) (*http.Response, string)
 	PostMultipart(param PostMultipartParam) (*http.Response, string, error)
-	PostMultipartForStruct(param PostMultipartParam, struct_ interface{}) (*http.Response, error)
-	MustPostForStruct(param RequestParam, struct_ interface{}) *http.Response
-	PostForStruct(param RequestParam, struct_ interface{}) (*http.Response, error)
-	MustPost(param RequestParam) (*http.Response, string)
-	Post(param RequestParam) (*http.Response, string, error)
+	PostMultipartForStruct(param PostMultipartParam, struct_ interface{}) (*http.Response, []byte, error)
+	MustPostForStruct(param RequestParam, struct_ interface{}) (*http.Response, []byte)
+	PostForStruct(param RequestParam, struct_ interface{}) (*http.Response, []byte, error)
+	MustPostForString(param RequestParam) (*http.Response, string)
+	PostForString(param RequestParam) (*http.Response, string, error)
 	MustPostForBytes(param RequestParam) (*http.Response, []byte)
 	PostForBytes(param RequestParam) (*http.Response, []byte, error)
-	MustGet(param RequestParam) (*http.Response, string)
-	Get(param RequestParam) (*http.Response, string, error)
+	MustGetForString(param RequestParam) (*http.Response, string)
+	GetForString(param RequestParam) (*http.Response, string, error)
 	MustGetForBytes(param RequestParam) (*http.Response, []byte)
 	GetForBytes(param RequestParam) (*http.Response, []byte, error)
-	MustGetForStruct(param RequestParam, obj interface{}) *http.Response
-	GetForStruct(param RequestParam, obj interface{}) (*http.Response, error)
+	MustGetForStruct(param RequestParam, obj interface{}) (*http.Response, []byte)
+	GetForStruct(param RequestParam, obj interface{}) (*http.Response, []byte, error)
 }
 
 type HttpClass struct {
@@ -142,55 +142,55 @@ func (httpInstance *HttpClass) PostMultipart(param PostMultipartParam) (*http.Re
 	}
 	response, body, errs := request.Send(param.Params).End()
 	if len(errs) > 0 {
-		return nil, ``, errs[0]
+		return nil, body, errs[0]
 	}
 	return response, body, nil
 }
 
-func (httpInstance *HttpClass) PostMultipartForStruct(param PostMultipartParam, struct_ interface{}) (*http.Response, error) {
+func (httpInstance *HttpClass) PostMultipartForStruct(param PostMultipartParam, struct_ interface{}) (*http.Response, []byte, error) {
 	request, err := httpInstance.makeMultipartRequest(param)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	response, _, errs := request.Send(param.Params).EndStruct(struct_)
+	response, bodyBytes, errs := request.Send(param.Params).EndStruct(struct_)
 	if len(errs) > 0 {
-		return nil, errs[0]
+		return nil, bodyBytes, errs[0]
 	}
-	return response, nil
+	return response, bodyBytes, nil
 }
 
-func (httpInstance *HttpClass) MustPostForStruct(param RequestParam, struct_ interface{}) *http.Response {
-	res, err := httpInstance.PostForStruct(param, struct_)
-	if err != nil {
-		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
-	}
-	return res
-}
-
-func (httpInstance *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
-	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
-	requestClient.Method = gorequest.POST
-	requestClient.Url = param.Url
-	err := httpInstance.decorateRequest(requestClient, param)
-	if err != nil {
-		return nil, err
-	}
-	response, _, errs := requestClient.Send(param.Params).EndStruct(struct_)
-	if len(errs) > 0 {
-		return nil, errs[0]
-	}
-	return response, nil
-}
-
-func (httpInstance *HttpClass) MustPost(param RequestParam) (*http.Response, string) {
-	res, body, err := httpInstance.Post(param)
+func (httpInstance *HttpClass) MustPostForStruct(param RequestParam, struct_ interface{}) (*http.Response, []byte) {
+	res, body, err := httpInstance.PostForStruct(param, struct_)
 	if err != nil {
 		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
 	}
 	return res, body
 }
 
-func (httpInstance *HttpClass) Post(param RequestParam) (*http.Response, string, error) {
+func (httpInstance *HttpClass) PostForStruct(param RequestParam, struct_ interface{}) (*http.Response, []byte, error) {
+	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
+	requestClient.Method = gorequest.POST
+	requestClient.Url = param.Url
+	err := httpInstance.decorateRequest(requestClient, param)
+	if err != nil {
+		return nil, nil, err
+	}
+	response, bodyBytes, errs := requestClient.Send(param.Params).EndStruct(struct_)
+	if len(errs) > 0 {
+		return nil, bodyBytes, errs[0]
+	}
+	return response, bodyBytes, nil
+}
+
+func (httpInstance *HttpClass) MustPostForString(param RequestParam) (*http.Response, string) {
+	res, body, err := httpInstance.PostForString(param)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+	}
+	return res, body
+}
+
+func (httpInstance *HttpClass) PostForString(param RequestParam) (*http.Response, string, error) {
 	res, b, err := httpInstance.PostForBytes(param)
 	if err != nil {
 		return nil, "", err
@@ -216,7 +216,7 @@ func (httpInstance *HttpClass) PostForBytes(param RequestParam) (*http.Response,
 	}
 	response, bodyBytes, errs := requestClient.Send(param.Params).EndBytes()
 	if len(errs) > 0 {
-		return nil, nil, errs[0]
+		return nil, bodyBytes, errs[0]
 	}
 	return response, bodyBytes, nil
 }
@@ -281,15 +281,15 @@ func interfaceToUrlQuery(params interface{}) (string, error) {
 	return `?` + strParams, nil
 }
 
-func (httpInstance *HttpClass) MustGet(param RequestParam) (*http.Response, string) {
-	res, body, err := httpInstance.Get(param)
+func (httpInstance *HttpClass) MustGetForString(param RequestParam) (*http.Response, string) {
+	res, body, err := httpInstance.GetForString(param)
 	if err != nil {
 		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
 	}
 	return res, body
 }
 
-func (httpInstance *HttpClass) Get(param RequestParam) (*http.Response, string, error) {
+func (httpInstance *HttpClass) GetForString(param RequestParam) (*http.Response, string, error) {
 	res, b, err := httpInstance.GetForBytes(param)
 	if err != nil {
 		return nil, "", err
@@ -319,34 +319,34 @@ func (httpInstance *HttpClass) GetForBytes(param RequestParam) (*http.Response, 
 	}
 	response, bodyBytes, errs := requestClient.EndBytes()
 	if len(errs) > 0 {
-		return nil, nil, errs[0]
+		return nil, bodyBytes, errs[0]
 	}
 	return response, bodyBytes, nil
 }
 
-func (httpInstance *HttpClass) MustGetForStruct(param RequestParam, struct_ interface{}) *http.Response {
-	res, err := httpInstance.GetForStruct(param, struct_)
+func (httpInstance *HttpClass) MustGetForStruct(param RequestParam, struct_ interface{}) (*http.Response, []byte) {
+	res, body, err := httpInstance.GetForStruct(param, struct_)
 	if err != nil {
 		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
 	}
-	return res
+	return res, body
 }
 
-func (httpInstance *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) (*http.Response, error) {
+func (httpInstance *HttpClass) GetForStruct(param RequestParam, struct_ interface{}) (*http.Response, []byte, error) {
 	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	urlParams, err := interfaceToUrlQuery(param.Params)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	requestClient.Method = gorequest.GET
 	requestClient.Url = param.Url + urlParams
 	err = httpInstance.decorateRequest(requestClient, param)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	response, _, errs := requestClient.EndStruct(struct_)
+	response, bodyBytes, errs := requestClient.EndStruct(struct_)
 	if len(errs) > 0 {
-		return nil, errs[0]
+		return nil, bodyBytes, errs[0]
 	}
-	return response, nil
+	return response, bodyBytes, nil
 }
