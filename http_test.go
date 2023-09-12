@@ -3,7 +3,7 @@ package go_http
 import (
 	"fmt"
 	go_logger "github.com/pefish/go-logger"
-	"github.com/pefish/go-test-assert"
+	"github.com/pefish/go-test"
 	"testing"
 	"time"
 )

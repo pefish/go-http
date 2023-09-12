@@ -6,7 +6,6 @@ import (
 	go_format "github.com/pefish/go-format"
 	"github.com/pefish/go-http/gorequest"
 	"github.com/pefish/go-logger"
-	go_reflect "github.com/pefish/go-reflect"
 	"github.com/pkg/errors"
 	"net/http"
 	"reflect"
@@ -225,7 +224,7 @@ func (httpInstance *HttpClass) decorateRequest(request *gorequest.SuperAgent, pa
 	request.Debug = httpInstance.logger.IsDebug()
 	if param.Headers != nil {
 		for key, value := range param.Headers {
-			str := go_reflect.Reflect.ToString(value)
+			str := go_format.FormatInstance.ToString(value)
 			request.Set(key, str)
 		}
 	}
@@ -254,11 +253,11 @@ func interfaceToUrlQuery(params interface{}) (string, error) {
 			return ``, errors.New(fmt.Sprintf(`%F cannot cast to map[string]interface{}`, params))
 		}
 		for key, value := range paramsMap {
-			str := go_reflect.Reflect.ToString(value)
+			str := go_format.FormatInstance.ToString(value)
 			strParams += key + "=" + str + "&"
 		}
 	} else if kind == reflect.Struct {
-		return interfaceToUrlQuery(go_format.Format.StructToMap(params))
+		return interfaceToUrlQuery(go_format.FormatInstance.StructToMap(params))
 	} else if kind == reflect.Ptr {
 		return interfaceToUrlQuery(reflect.ValueOf(params).Elem().Interface())
 	} else if kind == reflect.String {
