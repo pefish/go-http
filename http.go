@@ -46,7 +46,7 @@ type HttpRequestOption struct {
 
 var defaultHttpRequestOption = HttpRequestOption{
 	timeout: 10 * time.Second,
-	logger:  go_logger.DefaultLogger,
+	logger:  go_logger.Logger,
 }
 
 func WithTimeout(timeout time.Duration) HttpRequestOptionFunc {
