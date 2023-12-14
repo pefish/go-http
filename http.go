@@ -3,6 +3,7 @@ package go_http
 import (
 	"encoding/json"
 	"fmt"
+	go_desensitize "github.com/pefish/go-desensitize"
 	go_format "github.com/pefish/go-format"
 	"github.com/pefish/go-http/gorequest"
 	"github.com/pefish/go-logger"
@@ -108,7 +109,7 @@ type PostMultipartParam struct {
 func (httpInstance *HttpClass) MustPostMultipart(param PostMultipartParam) (*http.Response, string) {
 	res, body, err := httpInstance.PostMultipart(param)
 	if err != nil {
-		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+		panic(err)
 	}
 	return res, body
 }
@@ -142,7 +143,7 @@ func (httpInstance *HttpClass) PostMultipart(param PostMultipartParam) (*http.Re
 	}
 	response, body, errs := request.Send(param.Params).End()
 	if len(errs) > 0 {
-		return nil, body, httpInstance.combineErrors(errs, body)
+		return nil, body, httpInstance.combineErrors(param.Url, param.Params, errs, body)
 	}
 	return response, body, nil
 }
@@ -154,7 +155,7 @@ func (httpInstance *HttpClass) PostMultipartForStruct(param PostMultipartParam, 
 	}
 	response, bodyBytes, errs := request.Send(param.Params).EndStruct(struct_)
 	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(errs, string(bodyBytes))
+		return nil, bodyBytes, httpInstance.combineErrors(param.Url, param.Params, errs, string(bodyBytes))
 	}
 	return response, bodyBytes, nil
 }
@@ -162,7 +163,7 @@ func (httpInstance *HttpClass) PostMultipartForStruct(param PostMultipartParam, 
 func (httpInstance *HttpClass) MustPostForStruct(param RequestParam, struct_ interface{}) (*http.Response, []byte) {
 	res, body, err := httpInstance.PostForStruct(param, struct_)
 	if err != nil {
-		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+		panic(err)
 	}
 	return res, body
 }
@@ -177,7 +178,7 @@ func (httpInstance *HttpClass) PostForStruct(param RequestParam, struct_ interfa
 	}
 	response, bodyBytes, errs := requestClient.Send(param.Params).EndStruct(struct_)
 	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(errs, string(bodyBytes))
+		return nil, bodyBytes, httpInstance.combineErrors(param.Url, param.Params, errs, string(bodyBytes))
 	}
 	return response, bodyBytes, nil
 }
@@ -185,7 +186,7 @@ func (httpInstance *HttpClass) PostForStruct(param RequestParam, struct_ interfa
 func (httpInstance *HttpClass) MustPostForString(param RequestParam) (*http.Response, string) {
 	res, body, err := httpInstance.PostForString(param)
 	if err != nil {
-		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+		panic(err)
 	}
 	return res, body
 }
@@ -201,7 +202,7 @@ func (httpInstance *HttpClass) PostForString(param RequestParam) (*http.Response
 func (httpInstance *HttpClass) MustPostForBytes(param RequestParam) (*http.Response, []byte) {
 	res, bodyBytes, err := httpInstance.PostForBytes(param)
 	if err != nil {
-		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+		panic(err)
 	}
 	return res, bodyBytes
 }
@@ -216,7 +217,7 @@ func (httpInstance *HttpClass) PostForBytes(param RequestParam) (*http.Response,
 	}
 	response, bodyBytes, errs := requestClient.Send(param.Params).EndBytes()
 	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(errs, string(bodyBytes))
+		return nil, bodyBytes, httpInstance.combineErrors(param.Url, param.Params, errs, string(bodyBytes))
 	}
 	return response, bodyBytes, nil
 }
@@ -284,7 +285,7 @@ func interfaceToUrlQuery(params interface{}) (string, error) {
 func (httpInstance *HttpClass) MustGetForString(param RequestParam) (*http.Response, string) {
 	res, body, err := httpInstance.GetForString(param)
 	if err != nil {
-		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+		panic(err)
 	}
 	return res, body
 }
@@ -300,7 +301,7 @@ func (httpInstance *HttpClass) GetForString(param RequestParam) (*http.Response,
 func (httpInstance *HttpClass) MustGetForBytes(param RequestParam) (*http.Response, []byte) {
 	res, bodyBytes, err := httpInstance.GetForBytes(param)
 	if err != nil {
-		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+		panic(err)
 	}
 	return res, bodyBytes
 }
@@ -319,7 +320,7 @@ func (httpInstance *HttpClass) GetForBytes(param RequestParam) (*http.Response, 
 	}
 	response, bodyBytes, errs := requestClient.EndBytes()
 	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(errs, string(bodyBytes))
+		return nil, bodyBytes, httpInstance.combineErrors(param.Url, param.Params, errs, string(bodyBytes))
 	}
 	return response, bodyBytes, nil
 }
@@ -327,7 +328,7 @@ func (httpInstance *HttpClass) GetForBytes(param RequestParam) (*http.Response, 
 func (httpInstance *HttpClass) MustGetForStruct(param RequestParam, struct_ interface{}) (*http.Response, []byte) {
 	res, body, err := httpInstance.GetForStruct(param, struct_)
 	if err != nil {
-		panic(errors.New(fmt.Sprintf(`ERROR!! Url: %s, Params: %v, error: %v`, param.Url, param.Params, err)))
+		panic(err)
 	}
 	return res, body
 }
@@ -346,12 +347,12 @@ func (httpInstance *HttpClass) GetForStruct(param RequestParam, struct_ interfac
 	}
 	response, bodyBytes, errs := requestClient.EndStruct(struct_)
 	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(errs, string(bodyBytes))
+		return nil, bodyBytes, httpInstance.combineErrors(param.Url, param.Params, errs, string(bodyBytes))
 	}
 	return response, bodyBytes, nil
 }
 
-func (httpInstance *HttpClass) combineErrors(errs []error, bodyStr string) error {
+func (httpInstance *HttpClass) combineErrors(url string, params interface{}, errs []error, bodyStr string) error {
 	errStrs := make([]string, 0, len(errs))
 	for _, err := range errs {
 		errStrs = append(errStrs, err.Error())
@@ -359,5 +360,5 @@ func (httpInstance *HttpClass) combineErrors(errs []error, bodyStr string) error
 	if len(bodyStr) > 200 {
 		bodyStr = bodyStr[:200]
 	}
-	return errors.New(fmt.Sprintf("%s. body: %s", strings.Join(errStrs, " -> "), bodyStr))
+	return errors.New(fmt.Sprintf("Url: %s, Params: %s, Body: %s. -- %s", url, go_desensitize.Desensitize.DesensitizeToString(params), bodyStr, strings.Join(errStrs, " -> ")))
 }

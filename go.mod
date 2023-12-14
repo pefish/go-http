@@ -2,9 +2,9 @@ module github.com/pefish/go-http
 
 require (
 	github.com/google/uuid v1.1.2
-	github.com/pefish/go-format v0.2.6
+	github.com/pefish/go-format v0.2.9
 	github.com/pefish/go-logger v0.5.5
-	github.com/pefish/go-test v0.0.3
+	github.com/pefish/go-test v0.0.4
 	github.com/pkg/errors v0.8.1
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 	moul.io/http2curl v1.0.0
@@ -16,6 +16,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
+	github.com/pefish/go-desensitize v0.0.6 // indirect
 	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20181108003508-044398e4856c // indirect
 	go.uber.org/atomic v1.5.0 // indirect
