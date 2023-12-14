@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"net/http"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -141,7 +142,7 @@ func (httpInstance *HttpClass) PostMultipart(param PostMultipartParam) (*http.Re
 	}
 	response, body, errs := request.Send(param.Params).End()
 	if len(errs) > 0 {
-		return nil, body, errs[0]
+		return nil, body, errors.Wrap(httpInstance.combineErrors(errs), fmt.Sprintf("body: %s", body))
 	}
 	return response, body, nil
 }
@@ -153,7 +154,7 @@ func (httpInstance *HttpClass) PostMultipartForStruct(param PostMultipartParam, 
 	}
 	response, bodyBytes, errs := request.Send(param.Params).EndStruct(struct_)
 	if len(errs) > 0 {
-		return nil, bodyBytes, errs[0]
+		return nil, bodyBytes, errors.Wrap(httpInstance.combineErrors(errs), fmt.Sprintf("body: %s", string(bodyBytes)))
 	}
 	return response, bodyBytes, nil
 }
@@ -176,7 +177,7 @@ func (httpInstance *HttpClass) PostForStruct(param RequestParam, struct_ interfa
 	}
 	response, bodyBytes, errs := requestClient.Send(param.Params).EndStruct(struct_)
 	if len(errs) > 0 {
-		return nil, bodyBytes, errs[0]
+		return nil, bodyBytes, errors.Wrap(httpInstance.combineErrors(errs), fmt.Sprintf("body: %s", string(bodyBytes)))
 	}
 	return response, bodyBytes, nil
 }
@@ -215,7 +216,7 @@ func (httpInstance *HttpClass) PostForBytes(param RequestParam) (*http.Response,
 	}
 	response, bodyBytes, errs := requestClient.Send(param.Params).EndBytes()
 	if len(errs) > 0 {
-		return nil, bodyBytes, errs[0]
+		return nil, bodyBytes, errors.Wrap(httpInstance.combineErrors(errs), fmt.Sprintf("body: %s", string(bodyBytes)))
 	}
 	return response, bodyBytes, nil
 }
@@ -318,7 +319,7 @@ func (httpInstance *HttpClass) GetForBytes(param RequestParam) (*http.Response, 
 	}
 	response, bodyBytes, errs := requestClient.EndBytes()
 	if len(errs) > 0 {
-		return nil, bodyBytes, errs[0]
+		return nil, bodyBytes, errors.Wrap(httpInstance.combineErrors(errs), fmt.Sprintf("body: %s", string(bodyBytes)))
 	}
 	return response, bodyBytes, nil
 }
@@ -345,7 +346,15 @@ func (httpInstance *HttpClass) GetForStruct(param RequestParam, struct_ interfac
 	}
 	response, bodyBytes, errs := requestClient.EndStruct(struct_)
 	if len(errs) > 0 {
-		return nil, bodyBytes, errs[0]
+		return nil, bodyBytes, errors.Wrap(httpInstance.combineErrors(errs), fmt.Sprintf("body: %s", string(bodyBytes)))
 	}
 	return response, bodyBytes, nil
+}
+
+func (httpInstance *HttpClass) combineErrors(errs []error) error {
+	errStrs := make([]string, 0, len(errs))
+	for _, err := range errs {
+		errStrs = append(errStrs, err.Error())
+	}
+	return errors.New(strings.Join(errStrs, " -> "))
 }
