@@ -44,14 +44,12 @@ const (
 
 // Types we support.
 const (
-	TypeJSON       = "json"
-	TypeXML        = "xml"
-	TypeUrlencoded = "urlencoded"
-	TypeForm       = "form"
-	TypeFormData   = "form-data"
-	TypeHTML       = "html"
-	TypeText       = "text"
-	TypeMultipart  = "multipart"
+	TypeJSON      = "json"
+	TypeXML       = "xml"
+	TypeForm      = "form"
+	TypeHTML      = "html"
+	TypeText      = "text"
+	TypeMultipart = "multipart"
 )
 
 type superAgentRetryable struct {
@@ -439,14 +437,12 @@ func (s *SuperAgent) AddCookies(cookies []*http.Cookie) *SuperAgent {
 }
 
 var Types = map[string]string{
-	TypeJSON:       "application/json",
-	TypeXML:        "application/xml",
-	TypeForm:       "application/x-www-form-urlencoded",
-	TypeFormData:   "application/x-www-form-urlencoded",
-	TypeUrlencoded: "application/x-www-form-urlencoded",
-	TypeHTML:       "text/html",
-	TypeText:       "text/plain",
-	TypeMultipart:  "multipart/form-data",
+	TypeJSON:      "application/json",
+	TypeXML:       "application/xml",
+	TypeForm:      "application/x-www-form-urlencoded",
+	TypeHTML:      "text/html",
+	TypeText:      "text/plain",
+	TypeMultipart: "multipart/form-data",
 }
 
 // Type is a convenience function to specify the data type to send.
@@ -1207,9 +1203,9 @@ func (s *SuperAgent) getResponseBytes() (Response, []byte, []error) {
 		}
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	// Reset resp.Body so it can be use again
-	resp.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+	resp.Body = io.NopCloser(bytes.NewBuffer(body))
 	if err != nil {
 		return nil, nil, []error{err}
 	}
@@ -1257,7 +1253,7 @@ func (s *SuperAgent) MakeRequest() (*http.Request, error) {
 			contentReader = bytes.NewReader(contentJson)
 			contentType = "application/json"
 		}
-	case TypeForm, TypeFormData, TypeUrlencoded:
+	case TypeForm:
 		var contentForm []byte
 		if s.BounceToRawString || len(s.SliceData) != 0 {
 			contentForm = []byte(s.RawString)

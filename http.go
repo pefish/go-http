@@ -30,6 +30,7 @@ type IHttp interface {
 	GetForBytes(param RequestParam) (*http.Response, []byte, error)
 	MustGetForStruct(param RequestParam, obj interface{}) (*http.Response, []byte)
 	GetForStruct(param RequestParam, obj interface{}) (*http.Response, []byte, error)
+	PostFormDataForStruct(param RequestParam, struct_ interface{}) (*http.Response, []byte, error)
 }
 
 type HttpClass struct {
@@ -118,7 +119,7 @@ func (httpInstance *HttpClass) makeMultipartRequest(param PostMultipartParam) (*
 	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	requestClient.Method = gorequest.POST
 	requestClient.Url = param.Url
-	request := requestClient.Type("multipart")
+	request := requestClient.Type(gorequest.TypeMultipart)
 	err := httpInstance.decorateRequest(request, RequestParam{
 		Url:       param.Url,
 		Params:    param.Params,
@@ -148,6 +149,24 @@ func (httpInstance *HttpClass) PostMultipart(param PostMultipartParam) (*http.Re
 	return response, body, nil
 }
 
+func (httpInstance *HttpClass) PostFormDataForStruct(param RequestParam, struct_ interface{}) (*http.Response, []byte, error) {
+	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
+	requestClient.Method = gorequest.POST
+	requestClient.Url = param.Url
+	requestClient.TargetType = gorequest.TypeForm
+	err := httpInstance.decorateRequest(requestClient, param)
+	if err != nil {
+		return nil, nil, err
+	}
+	response, bodyBytes, errs := requestClient.
+		Send(param.Params).
+		EndStruct(struct_)
+	if len(errs) > 0 {
+		return nil, bodyBytes, httpInstance.combineErrors(param.Url, param.Params, errs, string(bodyBytes))
+	}
+	return response, bodyBytes, nil
+}
+
 func (httpInstance *HttpClass) PostMultipartForStruct(param PostMultipartParam, struct_ interface{}) (*http.Response, []byte, error) {
 	request, err := httpInstance.makeMultipartRequest(param)
 	if err != nil {
@@ -172,11 +191,14 @@ func (httpInstance *HttpClass) PostForStruct(param RequestParam, struct_ interfa
 	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
 	requestClient.Method = gorequest.POST
 	requestClient.Url = param.Url
+	requestClient.TargetType = gorequest.TypeJSON
 	err := httpInstance.decorateRequest(requestClient, param)
 	if err != nil {
 		return nil, nil, err
 	}
-	response, bodyBytes, errs := requestClient.Send(param.Params).EndStruct(struct_)
+	response, bodyBytes, errs := requestClient.
+		Send(param.Params).
+		EndStruct(struct_)
 	if len(errs) > 0 {
 		return nil, bodyBytes, httpInstance.combineErrors(param.Url, param.Params, errs, string(bodyBytes))
 	}
@@ -208,14 +230,20 @@ func (httpInstance *HttpClass) MustPostForBytes(param RequestParam) (*http.Respo
 }
 
 func (httpInstance *HttpClass) PostForBytes(param RequestParam) (*http.Response, []byte, error) {
-	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
+	requestClient := gorequest.
+		New(httpInstance.logger).
+		Proxy(httpInstance.httpProxy).
+		Timeout(httpInstance.timeout)
 	requestClient.Method = gorequest.POST
 	requestClient.Url = param.Url
+	requestClient.TargetType = gorequest.TypeJSON
 	err := httpInstance.decorateRequest(requestClient, param)
 	if err != nil {
 		return nil, nil, err
 	}
-	response, bodyBytes, errs := requestClient.Send(param.Params).EndBytes()
+	response, bodyBytes, errs := requestClient.
+		Send(param.Params).
+		EndBytes()
 	if len(errs) > 0 {
 		return nil, bodyBytes, httpInstance.combineErrors(param.Url, param.Params, errs, string(bodyBytes))
 	}
@@ -307,7 +335,10 @@ func (httpInstance *HttpClass) MustGetForBytes(param RequestParam) (*http.Respon
 }
 
 func (httpInstance *HttpClass) GetForBytes(param RequestParam) (*http.Response, []byte, error) {
-	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
+	requestClient := gorequest.
+		New(httpInstance.logger).
+		Proxy(httpInstance.httpProxy).
+		Timeout(httpInstance.timeout)
 	urlParams, err := interfaceToUrlQuery(param.Params)
 	if err != nil {
 		return nil, nil, err
