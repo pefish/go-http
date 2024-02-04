@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	go_logger "github.com/pefish/go-logger"
+	"golang.org/x/net/publicsuffix"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -24,7 +25,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"golang.org/x/net/publicsuffix"
 	"moul.io/http2curl"
 )
 
