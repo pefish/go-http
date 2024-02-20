@@ -1169,9 +1169,9 @@ func (s *SuperAgent) getResponseBytes() (Response, []byte, []error) {
 		uuidStr = u.String()
 		dump, err := httputil.DumpRequest(req, true)
 		if err != nil {
-			s.logger.DebugF("[http] Error: %#v", err)
+			s.logger.DebugF("[go-http] Error: %#v", err)
 		} else {
-			s.logger.DebugF("[http] [%s] HTTP Request: %s", uuidStr, string(dump))
+			s.logger.DebugF("[go-http] [%s] HTTP Request: %s", uuidStr, string(dump))
 		}
 	}
 
@@ -1197,9 +1197,9 @@ func (s *SuperAgent) getResponseBytes() (Response, []byte, []error) {
 	if s.Debug {
 		dump, err := httputil.DumpResponse(resp, true)
 		if nil != err {
-			s.logger.DebugF("Error: %#v", err)
+			s.logger.DebugF("[go-http] Error: %#v", err)
 		} else {
-			s.logger.DebugF("[%s] HTTP Response: %s", uuidStr, string(dump))
+			s.logger.DebugF("[go-http] [%s] HTTP Response: %s", uuidStr, string(dump))
 		}
 	}
 
