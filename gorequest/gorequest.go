@@ -5,8 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	go_logger "github.com/pefish/go-logger"
-	"golang.org/x/net/publicsuffix"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -22,6 +20,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	go_logger "github.com/pefish/go-logger"
+	"golang.org/x/net/publicsuffix"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"

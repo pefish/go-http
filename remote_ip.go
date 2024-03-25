@@ -2,16 +2,17 @@ package go_http
 
 import (
 	"bytes"
-	"github.com/pkg/errors"
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 func (httpInstance *HttpClass) GetRemoteIp(r *http.Request) (string, error) {
 	for _, h := range []string{"X-Forwarded-For", "X-Real-Ip"} {
 		addresses := strings.Split(r.Header.Get(h), ",")
-		for i := len(addresses) -1 ; i >= 0; i-- {
+		for i := len(addresses) - 1; i >= 0; i-- {
 			ip := strings.TrimSpace(addresses[i])
 			realIP := net.ParseIP(ip)
 			if !realIP.IsGlobalUnicast() || httpInstance.IsPrivateSubnet(realIP) {
@@ -23,10 +24,9 @@ func (httpInstance *HttpClass) GetRemoteIp(r *http.Request) (string, error) {
 	return "", errors.New(`no remote ip`)
 }
 
-
 type ipRange struct {
 	start net.IP
-	end net.IP
+	end   net.IP
 }
 
 func inRange(r ipRange, ipAddress net.IP) bool {
@@ -63,17 +63,17 @@ var privateRanges = []ipRange{
 		end:   net.ParseIP("198.19.255.255"),
 	},
 }
+
 func (httpInstance *HttpClass) IsPrivateSubnet(ipAddress net.IP) bool {
 	// my use case is only concerned with ipv4 atm
 	if ipCheck := ipAddress.To4(); ipCheck != nil {
 		// iterate over all our ranges
 		for _, r := range privateRanges {
 			// check if this ip is in a private range
-			if inRange(r, ipAddress){
+			if inRange(r, ipAddress) {
 				return true
 			}
 		}
 	}
 	return false
 }
-

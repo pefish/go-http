@@ -2,10 +2,11 @@ package go_http
 
 import (
 	"fmt"
-	go_logger "github.com/pefish/go-logger"
-	go_test_ "github.com/pefish/go-test"
 	"testing"
 	"time"
+
+	go_logger "github.com/pefish/go-logger"
+	go_test_ "github.com/pefish/go-test"
 )
 
 func TestHttpClass_interfaceToUrlQuery(t *testing.T) {

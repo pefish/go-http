@@ -3,16 +3,18 @@ package go_http
 import (
 	"encoding/json"
 	"fmt"
+
 	go_desensitize "github.com/pefish/go-desensitize"
 	go_format "github.com/pefish/go-format"
 
-	"github.com/pefish/go-http/gorequest"
-	"github.com/pefish/go-logger"
-	"github.com/pkg/errors"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/pefish/go-http/gorequest"
+	go_logger "github.com/pefish/go-logger"
+	"github.com/pkg/errors"
 )
 
 type IHttp interface {
@@ -392,5 +394,5 @@ func (httpInstance *HttpClass) combineErrors(url string, params interface{}, err
 	if len(bodyStr) > 200 {
 		bodyStr = bodyStr[:200]
 	}
-	return errors.New(fmt.Sprintf("Url: %s, Params: %s, Body: %s. -- %s", url, go_desensitize.Desensitize.DesensitizeToString(params), bodyStr, strings.Join(errStrs, " -> ")))
+	return errors.New(fmt.Sprintf("Url: %s, Params: %s, Body: %s. -- %s", url, go_desensitize.Desensitize.MustDesensitizeToString(params), bodyStr, strings.Join(errStrs, " -> ")))
 }
