@@ -7,7 +7,7 @@ require (
 	github.com/pefish/go-logger v0.5.6
 	github.com/pefish/go-test v0.0.4
 	github.com/pkg/errors v0.9.1
-	golang.org/x/net v0.22.0
+	golang.org/x/net v0.26.0
 	moul.io/http2curl v1.0.0
 )
 
