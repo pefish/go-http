@@ -26,7 +26,7 @@ func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 func TestHttpClass_Post(t *testing.T) {
 	str := `{"side": "test", "chain": "test"}`
 	requester := NewHttpRequester(WithLogger(go_logger.Logger.CloneWithLevel("debug")))
-	_, body, err := requester.PostForString(RequestParam{
+	_, body, err := requester.PostForString(&RequestParams{
 		Url:    `http://www.baidu.com`,
 		Params: str,
 	})
@@ -47,7 +47,7 @@ func TestHttpClass_Proxy(t *testing.T) {
 
 	requester := NewHttpRequester()
 	//requester := NewHttpRequester(WithHttpProxy("http://127.0.0.1:1087"))
-	_, body, err := requester.GetForString(RequestParam{
+	_, body, err := requester.GetForString(&RequestParams{
 		Url: `https://ip.me`,
 		Headers: map[string]interface{}{
 			"User-Agent": "curl/7.64.1",
@@ -63,7 +63,7 @@ func TestHttpClass_GetForStruct(t *testing.T) {
 		Id      string `json:"id"`
 		Message string `json:"message"`
 	}
-	_, body, err := NewHttpRequester(WithTimeout(10*time.Second)).GetForStruct(RequestParam{
+	_, body, err := NewHttpRequester(WithTimeout(10*time.Second)).GetForStruct(&RequestParams{
 		Url: fmt.Sprintf("https://api.zealy.io/communities/%s/users", "baselendfinance"),
 		Params: map[string]interface{}{
 			"ethAddress": "0x8f72B6E3DF451F61b4E152de696B2Ba4748cFcc0",
@@ -91,7 +91,7 @@ func TestHttpClass_PostFormDataForStruct(t *testing.T) {
 		WithLogger(go_logger.Logger.CloneWithLevel("debug")),
 		WithTimeout(5*time.Second),
 	).PostFormDataForStruct(
-		RequestParam{
+		&RequestParams{
 			Url: "https://www.google.com/recaptcha/api/siteverify",
 			Params: map[string]interface{}{
 				"secret":   "",
