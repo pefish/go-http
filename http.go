@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/pefish/go-http/gorequest"
+	i_logger "github.com/pefish/go-interface/i-logger"
+	t_logger "github.com/pefish/go-interface/t-logger"
 	go_logger "github.com/pefish/go-logger"
 	"github.com/pkg/errors"
 )
@@ -30,7 +32,7 @@ type IHttp interface {
 
 type HttpClass struct {
 	timeout   time.Duration
-	logger    go_logger.InterfaceLogger
+	logger    i_logger.ILogger
 	httpProxy string
 }
 
@@ -38,7 +40,7 @@ type HttpRequestOptionFunc func(options *HttpRequestOption)
 
 type HttpRequestOption struct {
 	timeout   time.Duration
-	logger    go_logger.InterfaceLogger
+	logger    i_logger.ILogger
 	httpProxy string
 }
 
@@ -53,7 +55,7 @@ func WithTimeout(timeout time.Duration) HttpRequestOptionFunc {
 	}
 }
 
-func WithLogger(logger go_logger.InterfaceLogger) HttpRequestOptionFunc {
+func WithLogger(logger i_logger.ILogger) HttpRequestOptionFunc {
 	return func(option *HttpRequestOption) {
 		option.logger = logger
 	}
@@ -196,7 +198,7 @@ func (httpInstance *HttpClass) PostForBytes(params *RequestParams) (res *http.Re
 }
 
 func (httpInstance *HttpClass) decorateRequest(request *gorequest.SuperAgent, params *RequestParams) {
-	request.Debug = httpInstance.logger.IsDebug()
+	request.Debug = httpInstance.logger.Level() == t_logger.Level_DEBUG
 	if params.Headers != nil {
 		for key, value := range params.Headers {
 			str := go_format.FormatInstance.ToString(value)

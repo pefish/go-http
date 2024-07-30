@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	go_logger "github.com/pefish/go-logger"
+	i_logger "github.com/pefish/go-interface/i-logger"
 	"golang.org/x/net/publicsuffix"
 
 	"github.com/google/uuid"
@@ -82,14 +82,14 @@ type SuperAgent struct {
 	BasicAuth            struct{ Username, Password string }
 	Debug                bool
 	CurlCommand          bool
-	logger               go_logger.InterfaceLogger
+	logger               i_logger.ILogger
 	Retryable            superAgentRetryable
 	DoNotClearSuperAgent bool
 	isClone              bool
 }
 
 // Used to create a new SuperAgent object.
-func New(logger go_logger.InterfaceLogger) *SuperAgent {
+func New(logger i_logger.ILogger) *SuperAgent {
 	cookiejarOptions := cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	}
@@ -245,7 +245,7 @@ func (s *SuperAgent) SetDoNotClearSuperAgent(enable bool) *SuperAgent {
 	return s
 }
 
-func (s *SuperAgent) SetLogger(logger go_logger.InterfaceLogger) *SuperAgent {
+func (s *SuperAgent) SetLogger(logger i_logger.ILogger) *SuperAgent {
 	s.logger = logger
 	return s
 }
