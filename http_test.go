@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	go_logger "github.com/pefish/go-logger"
 	go_test_ "github.com/pefish/go-test"
 )
 
@@ -25,7 +24,7 @@ func TestHttpClass_interfaceToUrlQuery(t *testing.T) {
 
 func TestHttpClass_Post(t *testing.T) {
 	str := `{"side": "test", "chain": "test"}`
-	requester := NewHttpRequester(WithLogger(go_logger.Logger.CloneWithLevel("debug")))
+	requester := NewHttpRequester()
 	_, body, err := requester.PostForString(&RequestParams{
 		Url:    `http://www.baidu.com`,
 		Params: str,
@@ -88,7 +87,6 @@ func TestHttpClass_PostFormDataForStruct(t *testing.T) {
 		Hostname    string `json:"hostname"`
 	}
 	_, _, err := NewHttpRequester(
-		WithLogger(go_logger.Logger.CloneWithLevel("debug")),
 		WithTimeout(5*time.Second),
 	).PostFormDataForStruct(
 		&RequestParams{

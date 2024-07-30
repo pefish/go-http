@@ -14,7 +14,6 @@ import (
 	"github.com/pefish/go-http/gorequest"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
-	go_logger "github.com/pefish/go-logger"
 	"github.com/pkg/errors"
 )
 
@@ -46,7 +45,7 @@ type HttpRequestOption struct {
 
 var defaultHttpRequestOption = HttpRequestOption{
 	timeout: 10 * time.Second,
-	logger:  go_logger.Logger,
+	logger:  &i_logger.DefaultLogger,
 }
 
 func WithTimeout(timeout time.Duration) HttpRequestOptionFunc {
