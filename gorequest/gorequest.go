@@ -245,11 +245,6 @@ func (s *SuperAgent) SetDoNotClearSuperAgent(enable bool) *SuperAgent {
 	return s
 }
 
-func (s *SuperAgent) SetLogger(logger i_logger.ILogger) *SuperAgent {
-	s.logger = logger
-	return s
-}
-
 // Clear SuperAgent data for another new request.
 func (s *SuperAgent) ClearSuperAgent() {
 	if s.DoNotClearSuperAgent {
