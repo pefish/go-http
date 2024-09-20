@@ -200,7 +200,7 @@ func (httpInstance *HttpClass) decorateRequest(request *gorequest.SuperAgent, pa
 	request.Debug = httpInstance.logger.Level() == t_logger.Level_DEBUG
 	if params.Headers != nil {
 		for key, value := range params.Headers {
-			str := go_format.FormatInstance.ToString(value)
+			str := go_format.ToString(value)
 			request.Set(key, str)
 		}
 	}
@@ -228,11 +228,11 @@ func interfaceToUrlQuery(params interface{}) (string, error) {
 			return ``, errors.Errorf(`%F cannot cast to map[string]interface{}`, params)
 		}
 		for key, value := range paramsMap {
-			str := go_format.FormatInstance.ToString(value)
+			str := go_format.ToString(value)
 			strParams += key + "=" + str + "&"
 		}
 	} else if kind == reflect.Struct {
-		return interfaceToUrlQuery(go_format.FormatInstance.StructToMap(params))
+		return interfaceToUrlQuery(go_format.StructToMap(params))
 	} else if kind == reflect.Ptr {
 		return interfaceToUrlQuery(reflect.ValueOf(params).Elem().Interface())
 	} else if kind == reflect.String {
