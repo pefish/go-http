@@ -64,8 +64,13 @@ func TestHttpClass_GetForStruct(t *testing.T) {
 	}
 	_, body, err := NewHttpRequester(WithTimeout(10*time.Second)).GetForStruct(&RequestParams{
 		Url: fmt.Sprintf("https://api.zealy.io/communities/%s/users", "baselendfinance"),
+		Queries: map[string]string{
+			"A": "a",
+			"b": "b",
+		},
 		Params: map[string]interface{}{
 			"ethAddress": "0x8f72B6E3DF451F61b4E152de696B2Ba4748cFcc0",
+			"c":          "c",
 		},
 		Headers: map[string]interface{}{
 			"x-api-key": "5ac42cpXHE3R9cq7l0Nm-ng78CA",

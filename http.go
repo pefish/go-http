@@ -195,17 +195,22 @@ func (httpInstance *HttpClass) decorateRequest(requestClient *gorequest.SuperAge
 	if method == gorequest.GET {
 		if params.Queries != nil {
 			urlParamsStr = mapToUrlQuery(params.Queries)
-		} else {
+		}
+		if params.Params != nil {
 			urlParams, err := interfaceToUrlQuery(params.Params)
 			if err != nil {
 				panic(err)
 			}
-			urlParamsStr = urlParams
+			if urlParamsStr == "" {
+				urlParamsStr = urlParams
+			} else {
+				urlParamsStr += "&" + urlParams
+			}
 		}
 	} else if method == gorequest.POST {
 		urlParamsStr = mapToUrlQuery(params.Queries)
 	}
-	requestClient.Url = params.Url + urlParamsStr
+	requestClient.Url = params.Url + "?" + urlParamsStr
 
 	if params.Headers != nil {
 		for key, value := range params.Headers {
@@ -272,7 +277,7 @@ func interfaceToUrlQuery(params interface{}) (string, error) {
 	if 0 < len(strParams) {
 		strParams = string([]rune(strParams)[:len(strParams)-1])
 	}
-	return `?` + strParams, nil
+	return strParams, nil
 }
 
 func (httpInstance *HttpClass) GetForString(params *RequestParams) (res *http.Response, body string, err error) {
