@@ -106,3 +106,27 @@ func TestHttpClass_PostFormDataForStruct(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	fmt.Println(httpResult)
 }
+
+func TestHttpClass_PostForStruct(t *testing.T) {
+	var httpResult struct {
+		ErrCode uint64 `json:"errcode"`
+		ErrMsg  string `json:"errmsg"`
+	}
+	_, _, err := NewHttpRequester(
+		WithTimeout(5*time.Second),
+	).PostForStruct(
+		&RequestParams{
+			Url: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=0338fb73-2bce-478b-b47e",
+			Params: map[string]interface{}{
+				"msgtype": "text",
+				"text": map[string]interface{}{
+					"content":        "test",
+					"mentioned_list": []string{"@all"},
+				},
+			},
+		},
+		&httpResult,
+	)
+	go_test_.Equal(t, nil, err)
+	fmt.Println(httpResult)
+}

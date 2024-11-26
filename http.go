@@ -210,7 +210,10 @@ func (httpInstance *HttpClass) decorateRequest(requestClient *gorequest.SuperAge
 	} else if method == gorequest.POST {
 		urlParamsStr = mapToUrlQuery(params.Queries)
 	}
-	requestClient.Url = params.Url + "?" + urlParamsStr
+	requestClient.Url = params.Url
+	if urlParamsStr != "" {
+		requestClient.Url += "?" + urlParamsStr
+	}
 
 	if params.Headers != nil {
 		for key, value := range params.Headers {
