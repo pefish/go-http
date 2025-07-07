@@ -1,10 +1,12 @@
 package go_http
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	go_test_ "github.com/pefish/go-test"
 )
 
@@ -126,6 +128,50 @@ func TestHttpClass_PostForStruct(t *testing.T) {
 			},
 		},
 		&httpResult,
+	)
+	go_test_.Equal(t, nil, err)
+	fmt.Println(httpResult)
+}
+
+func TestHttpClass_PostMultipart(t *testing.T) {
+	// return
+	type TokenMetadata struct {
+		Name        string `json:"name"`
+		Symbol      string `json:"symbol"`
+		Description string `json:"description"`
+		Image       string `json:"image"`
+		// ShowName    bool   `json:"showName"`
+		CreatedOn string `json:"createdOn"`
+		Twitter   string `json:"twitter"`
+		Telegram  string `json:"telegram"`
+		Website   string `json:"website"`
+	}
+
+	var httpResult struct {
+		Success     bool   `json:"success"`
+		ChallengeTs string `json:"challenge_ts"`
+		Hostname    string `json:"hostname"`
+	}
+	tokenInfoBytes, _ := json.Marshal(&TokenMetadata{
+		Name:   "name",
+		Symbol: "symbol",
+	})
+	_, _, err := NewHttpRequester(
+		WithTimeout(5 * time.Second),
+	).PostMultipart(
+		&RequestParams{
+			Url: "https://uploads.pinata.cloud/v3/files",
+			Headers: map[string]any{
+				"Authorization": fmt.Sprintf("Bearer %s", ""),
+			},
+			Params: map[string]any{
+				"network": "public",
+				"file": BytesFileInfo{
+					FileName: uuid.NewString() + ".txt",
+					Bytes:    tokenInfoBytes,
+				},
+			},
+		},
 	)
 	go_test_.Equal(t, nil, err)
 	fmt.Println(httpResult)

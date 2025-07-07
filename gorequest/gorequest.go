@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net"
 	"net/http"
@@ -123,9 +122,7 @@ func cloneMapArray(old map[string][]string) map[string][]string {
 	newMap := make(map[string][]string, len(old))
 	for k, vals := range old {
 		newMap[k] = make([]string, len(vals))
-		for i := range vals {
-			newMap[k][i] = vals[i]
-		}
+		copy(newMap[k], vals)
 	}
 	return newMap
 }
@@ -144,9 +141,7 @@ func shallowCopyDataSlice(old []interface{}) []interface{} {
 		return nil
 	}
 	newData := make([]interface{}, len(old))
-	for i := range old {
-		newData[i] = old[i]
-	}
+	copy(newData, old)
 	return newData
 }
 func shallowCopyFileArray(old []File) []File {
@@ -154,9 +149,7 @@ func shallowCopyFileArray(old []File) []File {
 		return nil
 	}
 	newData := make([]File, len(old))
-	for i := range old {
-		newData[i] = old[i]
-	}
+	copy(newData, old)
 	return newData
 }
 func shallowCopyCookies(old []*http.Cookie) []*http.Cookie {
@@ -164,9 +157,7 @@ func shallowCopyCookies(old []*http.Cookie) []*http.Cookie {
 		return nil
 	}
 	newData := make([]*http.Cookie, len(old))
-	for i := range old {
-		newData[i] = old[i]
-	}
+	copy(newData, old)
 	return newData
 }
 func shallowCopyErrors(old []error) []error {
@@ -174,9 +165,7 @@ func shallowCopyErrors(old []error) []error {
 		return nil
 	}
 	newData := make([]error, len(old))
-	for i := range old {
-		newData[i] = old[i]
-	}
+	copy(newData, old)
 	return newData
 }
 
@@ -184,9 +173,7 @@ func shallowCopyErrors(old []error) []error {
 func copyRetryable(old superAgentRetryable) superAgentRetryable {
 	newRetryable := old
 	newRetryable.RetryableStatus = make([]int, len(old.RetryableStatus))
-	for i := range old.RetryableStatus {
-		newRetryable.RetryableStatus[i] = old.RetryableStatus[i]
-	}
+	copy(newRetryable.RetryableStatus, old.RetryableStatus)
 	return newRetryable
 }
 
@@ -847,21 +834,7 @@ type File struct {
 //	  Type("multipart").
 //	  SendFile(b, "", "my_custom_fieldname"). // filename left blank, will become "example_file.ext"
 //	  End()
-func (s *SuperAgent) SendFile(file interface{}, args ...string) *SuperAgent {
-
-	filename := ""
-	fieldname := "file"
-
-	if len(args) >= 1 && len(args[0]) > 0 {
-		filename = strings.TrimSpace(args[0])
-	}
-	if len(args) >= 2 && len(args[1]) > 0 {
-		fieldname = strings.TrimSpace(args[1])
-	}
-	if fieldname == "file" || fieldname == "" {
-		fieldname = "file" + strconv.Itoa(len(s.FileData)+1)
-	}
-
+func (s *SuperAgent) SendFile(file interface{}, fileName string, fieldName string) *SuperAgent {
 	switch v := reflect.ValueOf(file); v.Kind() {
 	case reflect.String:
 		pathToFile, err := filepath.Abs(v.String())
@@ -869,27 +842,27 @@ func (s *SuperAgent) SendFile(file interface{}, args ...string) *SuperAgent {
 			s.Errors = append(s.Errors, err)
 			return s
 		}
-		if filename == "" {
-			filename = filepath.Base(pathToFile)
+		if fileName == "" {
+			fileName = filepath.Base(pathToFile)
 		}
-		data, err := ioutil.ReadFile(v.String())
+		data, err := os.ReadFile(v.String())
 		if err != nil {
 			s.Errors = append(s.Errors, err)
 			return s
 		}
 		s.FileData = append(s.FileData, File{
-			Filename:  filename,
-			Fieldname: fieldname,
+			Filename:  fileName,
+			Fieldname: fieldName,
 			Data:      data,
 		})
 	case reflect.Slice:
 		slice := makeSliceOfReflectValue(v)
-		if filename == "" {
-			filename = "filename"
+		if fileName == "" {
+			fileName = "filename"
 		}
 		f := File{
-			Filename:  filename,
-			Fieldname: fieldname,
+			Filename:  fileName,
+			Fieldname: fieldName,
 			Data:      make([]byte, len(slice)),
 		}
 		for i := range slice {
@@ -897,27 +870,21 @@ func (s *SuperAgent) SendFile(file interface{}, args ...string) *SuperAgent {
 		}
 		s.FileData = append(s.FileData, f)
 	case reflect.Ptr:
-		if len(args) == 1 {
-			return s.SendFile(v.Elem().Interface(), args[0])
-		}
-		if len(args) >= 2 {
-			return s.SendFile(v.Elem().Interface(), args[0], args[1])
-		}
-		return s.SendFile(v.Elem().Interface())
+		return s.SendFile(v.Elem().Interface(), fileName, fieldName)
 	default:
 		if v.Type() == reflect.TypeOf(os.File{}) {
 			osfile := v.Interface().(os.File)
-			if filename == "" {
-				filename = filepath.Base(osfile.Name())
+			if fileName == "" {
+				fileName = filepath.Base(osfile.Name())
 			}
-			data, err := ioutil.ReadFile(osfile.Name())
+			data, err := os.ReadFile(osfile.Name())
 			if err != nil {
 				s.Errors = append(s.Errors, err)
 				return s
 			}
 			s.FileData = append(s.FileData, File{
-				Filename:  filename,
-				Fieldname: fieldname,
+				Filename:  fileName,
+				Fieldname: fieldName,
 				Data:      data,
 			})
 			return s

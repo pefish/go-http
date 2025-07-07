@@ -18,8 +18,8 @@ import (
 )
 
 type IHttp interface {
-	PostMultipart(params *PostMultipartParams) (res *http.Response, body string, err error)
-	PostMultipartForStruct(params *PostMultipartParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error)
+	PostMultipart(params *RequestParams) (res *http.Response, body string, err error)
+	PostMultipartForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error)
 	PostForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error)
 	PostForString(params *RequestParams) (res *http.Response, body string, err error)
 	PostForBytes(params *RequestParams) (res *http.Response, bodyBytes []byte, err error)
@@ -96,32 +96,50 @@ type BasicAuth struct {
 	Password string
 }
 
-type PostMultipartParams struct {
-	RequestParams
-	Files map[string][]BytesFileInfo
-}
-
-func (httpInstance *HttpClass) makeMultipartRequest(params *PostMultipartParams) *gorequest.SuperAgent {
+func (httpInstance *HttpClass) makeMultipartRequest(params *RequestParams) *gorequest.SuperAgent {
 	requestClient := gorequest.New(httpInstance.logger).
 		Proxy(httpInstance.httpProxy).
 		Timeout(httpInstance.timeout)
 	requestClient = requestClient.Type(gorequest.TypeMultipart)
-	httpInstance.decorateRequest(requestClient, &params.RequestParams, gorequest.POST)
-	for keyName, fileArr := range params.Files {
-		for _, file := range fileArr {
-			requestClient = requestClient.SendFile(file.Bytes, file.FileName, keyName)
+	httpInstance.decorateRequest(requestClient, params, gorequest.POST)
+	// 有 file 类型的，就编码进去
+	paramsExceptFile := make(map[string]any, 0)
+	for fieldName, v := range params.Params.(map[string]any) {
+		switch fileInfo := v.(type) {
+		case BytesFileInfo:
+			requestClient = requestClient.SendFile(fileInfo.Bytes, fileInfo.FileName, fieldName)
+		case *BytesFileInfo:
+			requestClient = requestClient.SendFile(fileInfo.Bytes, fileInfo.FileName, fieldName)
+		default:
+			paramsExceptFile[fieldName] = v
 		}
 	}
+	requestClient.Send(paramsExceptFile)
 	return requestClient
 }
 
-func (httpInstance *HttpClass) PostMultipart(params *PostMultipartParams) (res *http.Response, body string, err error) {
-	request := httpInstance.makeMultipartRequest(params)
-	response, body, errs := request.Send(params.Params).End()
+func (httpInstance *HttpClass) PostMultipart(params *RequestParams) (res *http.Response, body string, err error) {
+	_, ok := params.Params.(map[string]any)
+	if !ok {
+		return nil, "", errors.New("Params must be type <map[string]any>")
+	}
+	response, body, errs := httpInstance.makeMultipartRequest(params).End()
 	if len(errs) > 0 {
 		return nil, body, httpInstance.combineErrors(params.Url, params.Params, errs, body)
 	}
 	return response, body, nil
+}
+
+func (httpInstance *HttpClass) PostMultipartForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error) {
+	_, ok := params.Params.(map[string]any)
+	if !ok {
+		return nil, nil, errors.New("Params must be type <map[string]any>")
+	}
+	response, bodyBytes, errs := httpInstance.makeMultipartRequest(params).EndStruct(struct_)
+	if len(errs) > 0 {
+		return nil, bodyBytes, httpInstance.combineErrors(params.Url, params.Params, errs, string(bodyBytes))
+	}
+	return response, bodyBytes, nil
 }
 
 func (httpInstance *HttpClass) PostFormDataForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error) {
@@ -134,15 +152,6 @@ func (httpInstance *HttpClass) PostFormDataForStruct(params *RequestParams, stru
 	response, bodyBytes, errs := requestClient.
 		Send(params.Params).
 		EndStruct(struct_)
-	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(params.Url, params.Params, errs, string(bodyBytes))
-	}
-	return response, bodyBytes, nil
-}
-
-func (httpInstance *HttpClass) PostMultipartForStruct(params *PostMultipartParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error) {
-	request := httpInstance.makeMultipartRequest(params)
-	response, bodyBytes, errs := request.Send(params.Params).EndStruct(struct_)
 	if len(errs) > 0 {
 		return nil, bodyBytes, httpInstance.combineErrors(params.Url, params.Params, errs, string(bodyBytes))
 	}
