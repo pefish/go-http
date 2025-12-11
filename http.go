@@ -1,244 +1,81 @@
 package go_http
 
 import (
+	"bytes"
 	"encoding/json"
-
-	go_desensitize "github.com/pefish/go-desensitize"
-	go_format "github.com/pefish/go-format"
+	"io"
 
 	"net/http"
-	"reflect"
 	"strings"
 	"time"
 
-	"github.com/pefish/go-http/gorequest"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
 	"github.com/pkg/errors"
 )
 
-type IHttp interface {
-	PostMultipart(params *RequestParams) (res *http.Response, body string, err error)
-	PostMultipartForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error)
-	PostForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error)
-	PostForString(params *RequestParams) (res *http.Response, body string, err error)
-	PostForBytes(params *RequestParams) (res *http.Response, bodyBytes []byte, err error)
-	GetForString(params *RequestParams) (res *http.Response, body string, err error)
-	GetForBytes(params *RequestParams) (res *http.Response, bodyBytes []byte, err error)
-	GetForStruct(params *RequestParams, obj interface{}) (res *http.Response, bodyBytes []byte, err error)
-	PostFormDataForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error)
+type HttpType struct {
+	httpClient *http.Client
 }
 
-type HttpClass struct {
-	timeout   time.Duration
-	logger    i_logger.ILogger
-	httpProxy string
-}
+var HttpInstance = New(10 * time.Second)
 
-type HttpRequestOptionFunc func(options *HttpRequestOption)
-
-type HttpRequestOption struct {
-	timeout   time.Duration
-	logger    i_logger.ILogger
-	httpProxy string
-}
-
-var defaultHttpRequestOption = HttpRequestOption{
-	timeout: 10 * time.Second,
-	logger:  &i_logger.DefaultLogger,
-}
-
-func WithTimeout(timeout time.Duration) HttpRequestOptionFunc {
-	return func(option *HttpRequestOption) {
-		option.timeout = timeout
-	}
-}
-
-func WithLogger(logger i_logger.ILogger) HttpRequestOptionFunc {
-	return func(option *HttpRequestOption) {
-		option.logger = logger
-	}
-}
-
-func WithHttpProxy(proxyUrl string) HttpRequestOptionFunc {
-	return func(option *HttpRequestOption) {
-		option.httpProxy = proxyUrl
-	}
-}
-
-func NewHttpRequester(opts ...HttpRequestOptionFunc) IHttp {
-	option := defaultHttpRequestOption
-	for _, o := range opts {
-		o(&option)
-	}
-	return &HttpClass{
-		timeout:   option.timeout,
-		logger:    option.logger,
-		httpProxy: option.httpProxy,
+func New(timeout time.Duration) *HttpType {
+	return &HttpType{
+		httpClient: &http.Client{
+			Transport: &http.Transport{
+				MaxIdleConns:        100,              // 全局最大空闲连接
+				MaxIdleConnsPerHost: 100,              // 每个主机最大空闲连接
+				IdleConnTimeout:     90 * time.Second, // 空闲连接超时
+				DisableKeepAlives:   false,            // 不要关闭 KeepAlive
+			},
+			Timeout: timeout,
+		},
 	}
 }
 
 type RequestParams struct {
-	Url       string
-	Queries   map[string]string
-	Params    interface{}
-	Headers   map[string]interface{}
-	BasicAuth *BasicAuth
+	Url     string
+	Queries map[string]string
+	Params  any
+	Headers map[string]any
 }
 
-type BytesFileInfo struct {
-	Bytes    []byte
-	FileName string
-}
-
-type BasicAuth struct {
-	Username string
-	Password string
-}
-
-func (httpInstance *HttpClass) makeMultipartRequest(params *RequestParams) *gorequest.SuperAgent {
-	requestClient := gorequest.New(httpInstance.logger).
-		Proxy(httpInstance.httpProxy).
-		Timeout(httpInstance.timeout)
-	requestClient = requestClient.Type(gorequest.TypeMultipart)
-	httpInstance.decorateRequest(requestClient, params, gorequest.POST)
-	// 有 file 类型的，就编码进去
-	paramsExceptFile := make(map[string]any, 0)
-	for fieldName, v := range params.Params.(map[string]any) {
-		switch fileInfo := v.(type) {
-		case BytesFileInfo:
-			requestClient = requestClient.SendFile(fileInfo.Bytes, fileInfo.FileName, fieldName)
-		case *BytesFileInfo:
-			requestClient = requestClient.SendFile(fileInfo.Bytes, fileInfo.FileName, fieldName)
-		default:
-			paramsExceptFile[fieldName] = v
-		}
+func (t *HttpType) PostForStruct(
+	logger i_logger.ILogger,
+	params *RequestParams,
+	struct_ any,
+) (res_ *http.Response, bodyBytes_ []byte, err error) {
+	bodyBytes, _ := json.Marshal(params.Params)
+	url := params.Url
+	if params.Queries != nil {
+		url = "?" + mapToUrlQuery(params.Queries)
 	}
-	requestClient.Send(paramsExceptFile)
-	return requestClient
-}
-
-func (httpInstance *HttpClass) PostMultipart(params *RequestParams) (res *http.Response, body string, err error) {
-	_, ok := params.Params.(map[string]any)
-	if !ok {
-		return nil, "", errors.New("Params must be type <map[string]any>")
-	}
-	response, body, errs := httpInstance.makeMultipartRequest(params).End()
-	if len(errs) > 0 {
-		return nil, body, httpInstance.combineErrors(params.Url, params.Params, errs, body)
-	}
-	return response, body, nil
-}
-
-func (httpInstance *HttpClass) PostMultipartForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error) {
-	_, ok := params.Params.(map[string]any)
-	if !ok {
-		return nil, nil, errors.New("Params must be type <map[string]any>")
-	}
-	response, bodyBytes, errs := httpInstance.makeMultipartRequest(params).EndStruct(struct_)
-	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(params.Url, params.Params, errs, string(bodyBytes))
-	}
-	return response, bodyBytes, nil
-}
-
-func (httpInstance *HttpClass) PostFormDataForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error) {
-	requestClient := gorequest.
-		New(httpInstance.logger).
-		Proxy(httpInstance.httpProxy).
-		Timeout(httpInstance.timeout)
-	requestClient.TargetType = gorequest.TypeForm
-	httpInstance.decorateRequest(requestClient, params, gorequest.POST)
-	response, bodyBytes, errs := requestClient.
-		Send(params.Params).
-		EndStruct(struct_)
-	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(params.Url, params.Params, errs, string(bodyBytes))
-	}
-	return response, bodyBytes, nil
-}
-
-func (httpInstance *HttpClass) PostForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error) {
-	requestClient := gorequest.New(httpInstance.logger).Proxy(httpInstance.httpProxy).Timeout(httpInstance.timeout)
-	requestClient.TargetType = gorequest.TypeJSON
-	httpInstance.decorateRequest(requestClient, params, gorequest.POST)
-	response, bodyBytes, errs := requestClient.
-		Send(params.Params).
-		EndStruct(struct_)
-	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(params.Url, params.Params, errs, string(bodyBytes))
-	}
-	return response, bodyBytes, nil
-}
-
-func (httpInstance *HttpClass) PostForString(params *RequestParams) (res *http.Response, body string, err error) {
-	res, b, err := httpInstance.PostForBytes(params)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
-		return nil, "", err
+		return nil, nil, errors.Wrap(err, "")
 	}
-	return res, string(b), nil
-}
-
-func (httpInstance *HttpClass) PostForBytes(params *RequestParams) (res *http.Response, bodyBytes []byte, err error) {
-	requestClient := gorequest.
-		New(httpInstance.logger).
-		Proxy(httpInstance.httpProxy).
-		Timeout(httpInstance.timeout)
-	requestClient.TargetType = gorequest.TypeJSON
-	httpInstance.decorateRequest(requestClient, params, gorequest.POST)
-	response, bodyBytes, errs := requestClient.
-		Send(params.Params).
-		EndBytes()
-	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(params.Url, params.Params, errs, string(bodyBytes))
-	}
-	return response, bodyBytes, nil
-}
-
-func (httpInstance *HttpClass) decorateRequest(requestClient *gorequest.SuperAgent, params *RequestParams, method string) {
-	requestClient.Method = method
-
-	requestClient.Debug = httpInstance.logger.Level() == t_logger.Level_DEBUG
-
-	urlParamsStr := ""
-	if method == gorequest.GET {
-		if params.Queries != nil {
-			urlParamsStr = mapToUrlQuery(params.Queries)
-		}
-		if params.Params != nil {
-			urlParams, err := interfaceToUrlQuery(params.Params)
-			if err != nil {
-				panic(err)
-			}
-			if urlParamsStr == "" {
-				urlParamsStr = urlParams
-			} else {
-				urlParamsStr += "&" + urlParams
-			}
-		}
-	} else if method == gorequest.POST {
-		urlParamsStr = mapToUrlQuery(params.Queries)
-	}
-	requestClient.Url = params.Url
-	if urlParamsStr != "" {
-		requestClient.Url += "?" + urlParamsStr
+	req.Header.Set("Content-Type", "application/json")
+	if logger.Level() == t_logger.Level_DEBUG {
+		logger.DebugF("http post url: %s, body: %s\n", url, string(bodyBytes))
 	}
 
-	if params.Headers != nil {
-		for key, value := range params.Headers {
-			str := go_format.ToString(value)
-			requestClient.Set(key, str)
-		}
+	resp, err := t.httpClient.Do(req)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "")
 	}
-	if params.BasicAuth != nil {
-		requestClient = requestClient.SetBasicAuth(params.BasicAuth.Username, params.BasicAuth.Password)
+	defer resp.Body.Close()
+
+	respBytes, _ := io.ReadAll(resp.Body)
+	if logger.Level() == t_logger.Level_DEBUG {
+		logger.DebugF("http post resp url: %s, body: %s\n", url, string(respBytes))
 	}
-	if params.Params != nil {
-		switch params.Params.(type) {
-		case string:
-			requestClient.BounceToRawString = true
-		}
+
+	if err := json.Unmarshal(respBytes, &struct_); err != nil {
+		return nil, nil, errors.Wrap(err, "")
 	}
+
+	return resp, respBytes, nil
 }
 
 func mapToUrlQuery(paramsMap map[string]string) string {
@@ -252,98 +89,62 @@ func mapToUrlQuery(paramsMap map[string]string) string {
 	return strings.Join(strParams, "&")
 }
 
-func interfaceToUrlQuery(params interface{}) (string, error) {
-	if params == nil {
-		return ``, nil
+func (t *HttpType) GetForStruct(
+	logger i_logger.ILogger,
+	params *RequestParams,
+	struct_ any,
+) (res_ *http.Response, bodyBytes_ []byte, err_ error) {
+	res, bodyBytes, err := t.getForBytes(logger, params)
+	if err != nil {
+		return nil, nil, err
 	}
-	type_ := reflect.TypeOf(params)
-	kind := type_.Kind()
-	var strParams string
-	if kind == reflect.Map {
-		paramsMap, ok := params.(map[string]interface{})
-		if !ok {
-			return ``, errors.Errorf(`%F cannot cast to map[string]interface{}`, params)
-		}
-		for key, value := range paramsMap {
-			str := go_format.ToString(value)
-			strParams += key + "=" + str + "&"
-		}
-	} else if kind == reflect.Struct {
-		return interfaceToUrlQuery(go_format.StructToMap(params))
-	} else if kind == reflect.Ptr {
-		return interfaceToUrlQuery(reflect.ValueOf(params).Elem().Interface())
-	} else if kind == reflect.String {
-		paramsStr := params.(string)
-		if paramsStr == "" {
-			return "", nil
-		}
-		b := make(map[string]interface{})
-		err := json.Unmarshal([]byte(paramsStr), &b)
-		if err != nil {
-			return "", errors.Wrap(err, "Unmarshal error.")
-		}
-		return interfaceToUrlQuery(b)
-	} else {
-		return ``, errors.New(`Params type error`)
+
+	if err := json.Unmarshal(bodyBytes, &struct_); err != nil {
+		return nil, nil, errors.Wrap(err, "")
 	}
-	if 0 < len(strParams) {
-		strParams = string([]rune(strParams)[:len(strParams)-1])
-	}
-	return strParams, nil
+
+	return res, bodyBytes, nil
 }
 
-func (httpInstance *HttpClass) GetForString(params *RequestParams) (res *http.Response, body string, err error) {
-	res, b, err := httpInstance.GetForBytes(params)
+func (t *HttpType) GetForString(
+	logger i_logger.ILogger,
+	params *RequestParams,
+) (res *http.Response, bodyStr string, err error) {
+	res, bodyBytes, err := t.getForBytes(logger, params)
 	if err != nil {
 		return nil, "", err
 	}
-	return res, string(b), nil
+	return res, string(bodyBytes), nil
 }
 
-func (httpInstance *HttpClass) GetForBytes(params *RequestParams) (res *http.Response, bodyBytes []byte, err error) {
-	requestClient := gorequest.
-		New(httpInstance.logger).
-		Proxy(httpInstance.httpProxy).
-		Timeout(httpInstance.timeout)
-	httpInstance.decorateRequest(requestClient, params, gorequest.GET)
-	response, bodyBytes, errs := requestClient.EndBytes()
-	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(params.Url, params.Params, errs, string(bodyBytes))
+func (t *HttpType) getForBytes(
+	logger i_logger.ILogger,
+	params *RequestParams,
+) (res_ *http.Response, bodyBytes_ []byte, err_ error) {
+	url := params.Url
+	if params.Queries != nil {
+		url = "?" + mapToUrlQuery(params.Queries)
 	}
-	return response, bodyBytes, nil
-}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "")
+	}
+	req.Header.Set("Content-Type", "application/json")
 
-func (httpInstance *HttpClass) GetForStruct(params *RequestParams, struct_ interface{}) (res *http.Response, bodyBytes []byte, err error) {
-	requestClient := gorequest.
-		New(httpInstance.logger).
-		Proxy(httpInstance.httpProxy).
-		Timeout(httpInstance.timeout)
-	httpInstance.decorateRequest(requestClient, params, gorequest.GET)
-	response, bodyBytes, errs := requestClient.EndStruct(struct_)
-	if len(errs) > 0 {
-		return nil, bodyBytes, httpInstance.combineErrors(params.Url, params.Params, errs, string(bodyBytes))
+	if logger.Level() == t_logger.Level_DEBUG {
+		logger.DebugF("http get url: %s\n", url)
 	}
-	return response, bodyBytes, nil
-}
 
-func (httpInstance *HttpClass) combineErrors(
-	url string,
-	params interface{},
-	errs []error,
-	bodyStr string,
-) error {
-	errStrs := make([]string, 0, len(errs))
-	for _, err := range errs {
-		errStrs = append(errStrs, err.Error())
+	resp, err := t.httpClient.Do(req)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "")
 	}
-	if len(bodyStr) > 200 {
-		bodyStr = bodyStr[:200]
+	defer resp.Body.Close()
+
+	respBytes, _ := io.ReadAll(resp.Body)
+	if logger.Level() == t_logger.Level_DEBUG {
+		logger.DebugF("http get resp url: %s, body: %s\n", url, string(respBytes))
 	}
-	return errors.Errorf(
-		"Url: %s, Params: %s, Body: %s. -- %s",
-		url,
-		go_desensitize.Desensitize.MustDesensitizeToString(params),
-		bodyStr,
-		strings.Join(errStrs, " -> "),
-	)
+
+	return resp, respBytes, nil
 }

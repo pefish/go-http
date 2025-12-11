@@ -9,13 +9,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (httpInstance *HttpClass) GetRemoteIp(r *http.Request) (string, error) {
+func (t *HttpType) GetRemoteIp(r *http.Request) (string, error) {
 	for _, h := range []string{"X-Forwarded-For", "X-Real-Ip"} {
 		addresses := strings.Split(r.Header.Get(h), ",")
 		for i := len(addresses) - 1; i >= 0; i-- {
 			ip := strings.TrimSpace(addresses[i])
 			realIP := net.ParseIP(ip)
-			if !realIP.IsGlobalUnicast() || httpInstance.IsPrivateSubnet(realIP) {
+			if !realIP.IsGlobalUnicast() || t.IsPrivateSubnet(realIP) {
 				continue
 			}
 			return ip, nil
@@ -64,7 +64,7 @@ var privateRanges = []ipRange{
 	},
 }
 
-func (httpInstance *HttpClass) IsPrivateSubnet(ipAddress net.IP) bool {
+func (t *HttpType) IsPrivateSubnet(ipAddress net.IP) bool {
 	// my use case is only concerned with ipv4 atm
 	if ipCheck := ipAddress.To4(); ipCheck != nil {
 		// iterate over all our ranges
