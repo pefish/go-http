@@ -68,7 +68,7 @@ func TestHttpClass_PostFormDataForStruct(t *testing.T) {
 		"description": "this is a test token1",
 		"image":       "ipfs://bafkreie5g4y4u3p5u3z7k3z7k3z7k3z7k3z7k3z7k3z7k3z7k3z7k3z7k3z7k",
 	})
-	jwt := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.w2i1UXZURz4dDY02S8mDLDtc_VbrOQpSb-R6tqGUcdY"
+	jwt := "w2i1UXZURz4dDY02S8mDLDtc_VbrOQpSb-R6tqGUcdY"
 
 	_, _, err := HttpInstance.PostFormDataForStruct(
 		&i_logger.DefaultLogger,
