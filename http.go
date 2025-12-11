@@ -76,7 +76,7 @@ func (t *HttpType) Post(
 
 	url := params.Url
 	if params.Queries != nil {
-		url = "?" + mapToUrlQuery(params.Queries)
+		url += "?" + mapToUrlQuery(params.Queries)
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
@@ -153,7 +153,7 @@ func (t *HttpType) PostFormData(
 ) (res_ *http.Response, bodyBytes_ []byte, err error) {
 	url := params.Url
 	if params.Queries != nil {
-		url = "?" + mapToUrlQuery(params.Queries)
+		url += "?" + mapToUrlQuery(params.Queries)
 	}
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -279,7 +279,7 @@ func (t *HttpType) Get(
 ) (res_ *http.Response, bodyBytes_ []byte, err_ error) {
 	url := params.Url
 	if params.Queries != nil {
-		url = "?" + mapToUrlQuery(params.Queries)
+		url += "?" + mapToUrlQuery(params.Queries)
 	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
