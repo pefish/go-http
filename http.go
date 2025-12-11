@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"mime/multipart"
 
 	"net/http"
 	"strings"
@@ -38,7 +39,7 @@ type RequestParams struct {
 	Url     string
 	Queries map[string]string
 	Params  any
-	Headers map[string]any
+	Headers map[string]string
 }
 
 func (t *HttpType) PostForStruct(
@@ -55,9 +56,25 @@ func (t *HttpType) PostForStruct(
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "")
 	}
-	req.Header.Set("Content-Type", "application/json")
+	if params.Headers == nil {
+		params.Headers = make(map[string]string)
+	}
+	params.Headers["Content-Type"] = "application/json"
+	for headerKey, headerValue := range params.Headers {
+		req.Header.Set(headerKey, headerValue)
+	}
 	if logger.Level() == t_logger.Level_DEBUG {
-		logger.DebugF("http post url: %s, body: %s\n", url, string(bodyBytes))
+		logger.DebugF(
+			`[HTTP POST] 
+Url: %s
+Headers: %v
+Body: %s
+
+`,
+			url,
+			params.Headers,
+			string(bodyBytes),
+		)
 	}
 
 	resp, err := t.httpClient.Do(req)
@@ -68,7 +85,103 @@ func (t *HttpType) PostForStruct(
 
 	respBytes, _ := io.ReadAll(resp.Body)
 	if logger.Level() == t_logger.Level_DEBUG {
-		logger.DebugF("http post resp url: %s, body: %s\n", url, string(respBytes))
+		logger.DebugF(
+			`[HTTP POST result] 
+Url: %s
+Body: %s
+
+`,
+			url,
+			string(respBytes),
+		)
+	}
+
+	if err := json.Unmarshal(respBytes, &struct_); err != nil {
+		return nil, nil, errors.Wrap(err, "")
+	}
+
+	return resp, respBytes, nil
+}
+
+type FileInfoType struct {
+	FileName  string
+	FileBytes []byte
+}
+
+func (t *HttpType) PostFormDataForStruct(
+	logger i_logger.ILogger,
+	params *RequestParams,
+	struct_ any,
+) (res_ *http.Response, bodyBytes_ []byte, err error) {
+	url := params.Url
+	if params.Queries != nil {
+		url = "?" + mapToUrlQuery(params.Queries)
+	}
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	for fieldName, value := range params.Params.(map[string]any) {
+		if fileInfo, ok := value.(FileInfoType); ok {
+			// 如果是文件信息，则创建文件字段
+			part, err := writer.CreateFormFile(fieldName, fileInfo.FileName)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "")
+			}
+			_, err = part.Write(fileInfo.FileBytes)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "")
+			}
+		} else {
+			// 否则创建普通字段
+			if err := writer.WriteField(fieldName, value.(string)); err != nil {
+				return nil, nil, errors.Wrap(err, "")
+			}
+		}
+	}
+	writer.Close()
+
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "")
+	}
+	if params.Headers == nil {
+		params.Headers = make(map[string]string)
+	}
+	params.Headers["Content-Type"] = writer.FormDataContentType()
+	for headerKey, headerValue := range params.Headers {
+		req.Header.Set(headerKey, headerValue)
+	}
+	if logger.Level() == t_logger.Level_DEBUG {
+		logger.DebugF(
+			`[HTTP POST] 
+Url: %s
+Headers: %v
+Body: %s
+
+`,
+			url,
+			params.Headers,
+			body.String(),
+		)
+	}
+
+	resp, err := t.httpClient.Do(req)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "")
+	}
+	defer resp.Body.Close()
+
+	respBytes, _ := io.ReadAll(resp.Body)
+	if logger.Level() == t_logger.Level_DEBUG {
+		logger.DebugF(
+			`[HTTP POST result] 
+Url: %s
+Body: %s
+
+`,
+			url,
+			string(respBytes),
+		)
 	}
 
 	if err := json.Unmarshal(respBytes, &struct_); err != nil {
@@ -129,10 +242,24 @@ func (t *HttpType) getForBytes(
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "")
 	}
-	req.Header.Set("Content-Type", "application/json")
+	if params.Headers == nil {
+		params.Headers = make(map[string]string)
+	}
+	params.Headers["Content-Type"] = "application/json"
+	for headerKey, headerValue := range params.Headers {
+		req.Header.Set(headerKey, headerValue)
+	}
 
 	if logger.Level() == t_logger.Level_DEBUG {
-		logger.DebugF("http get url: %s\n", url)
+		logger.DebugF(
+			`[HTTP GET] 
+Url: %s
+Headers: %v
+
+`,
+			url,
+			params.Headers,
+		)
 	}
 
 	resp, err := t.httpClient.Do(req)
@@ -143,7 +270,15 @@ func (t *HttpType) getForBytes(
 
 	respBytes, _ := io.ReadAll(resp.Body)
 	if logger.Level() == t_logger.Level_DEBUG {
-		logger.DebugF("http get resp url: %s, body: %s\n", url, string(respBytes))
+		logger.DebugF(
+			`[HTTP GET result] 
+Url: %s
+Body: %s
+
+`,
+			url,
+			string(respBytes),
+		)
 	}
 
 	return resp, respBytes, nil
