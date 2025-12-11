@@ -47,6 +47,22 @@ func (t *HttpType) PostForStruct(
 	params *RequestParams,
 	struct_ any,
 ) (res_ *http.Response, bodyBytes_ []byte, err error) {
+	res, bodyBytes, err := t.Post(logger, params)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := json.Unmarshal(bodyBytes, &struct_); err != nil {
+		return nil, nil, errors.Wrap(err, "")
+	}
+
+	return res, bodyBytes, nil
+}
+
+func (t *HttpType) Post(
+	logger i_logger.ILogger,
+	params *RequestParams,
+) (res_ *http.Response, bodyBytes_ []byte, err error) {
 	var bodyBytes []byte
 
 	switch params.Params.(type) {
@@ -106,10 +122,6 @@ Body: %s
 		)
 	}
 
-	if err := json.Unmarshal(respBytes, &struct_); err != nil {
-		return nil, nil, errors.Wrap(err, "")
-	}
-
 	return resp, respBytes, nil
 }
 
@@ -122,6 +134,22 @@ func (t *HttpType) PostFormDataForStruct(
 	logger i_logger.ILogger,
 	params *RequestParams,
 	struct_ any,
+) (res_ *http.Response, bodyBytes_ []byte, err error) {
+	res, respBytes, err := t.PostFormData(logger, params)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := json.Unmarshal(respBytes, &struct_); err != nil {
+		return nil, nil, errors.Wrap(err, "")
+	}
+
+	return res, respBytes, nil
+}
+
+func (t *HttpType) PostFormData(
+	logger i_logger.ILogger,
+	params *RequestParams,
 ) (res_ *http.Response, bodyBytes_ []byte, err error) {
 	url := params.Url
 	if params.Queries != nil {
@@ -203,10 +231,6 @@ Body: %s
 		)
 	}
 
-	if err := json.Unmarshal(respBytes, &struct_); err != nil {
-		return nil, nil, errors.Wrap(err, "")
-	}
-
 	return resp, respBytes, nil
 }
 
@@ -226,7 +250,7 @@ func (t *HttpType) GetForStruct(
 	params *RequestParams,
 	struct_ any,
 ) (res_ *http.Response, bodyBytes_ []byte, err_ error) {
-	res, bodyBytes, err := t.getForBytes(logger, params)
+	res, bodyBytes, err := t.Get(logger, params)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -242,14 +266,14 @@ func (t *HttpType) GetForString(
 	logger i_logger.ILogger,
 	params *RequestParams,
 ) (res *http.Response, bodyStr string, err error) {
-	res, bodyBytes, err := t.getForBytes(logger, params)
+	res, bodyBytes, err := t.Get(logger, params)
 	if err != nil {
 		return nil, "", err
 	}
 	return res, string(bodyBytes), nil
 }
 
-func (t *HttpType) getForBytes(
+func (t *HttpType) Get(
 	logger i_logger.ILogger,
 	params *RequestParams,
 ) (res_ *http.Response, bodyBytes_ []byte, err_ error) {
