@@ -47,7 +47,17 @@ func (t *HttpType) PostForStruct(
 	params *RequestParams,
 	struct_ any,
 ) (res_ *http.Response, bodyBytes_ []byte, err error) {
-	bodyBytes, _ := json.Marshal(params.Params)
+	var bodyBytes []byte
+
+	switch params.Params.(type) {
+	case string:
+		bodyBytes = []byte(params.Params.(string))
+	case []byte:
+		bodyBytes = params.Params.([]byte)
+	default:
+		bodyBytes, _ = json.Marshal(params.Params)
+	}
+
 	url := params.Url
 	if params.Queries != nil {
 		url = "?" + mapToUrlQuery(params.Queries)
@@ -120,7 +130,12 @@ func (t *HttpType) PostFormDataForStruct(
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	for fieldName, value := range params.Params.(map[string]any) {
+	fields, ok := params.Params.(map[string]any)
+	if !ok {
+		return nil, nil, errors.New("params.Params is not map[string]any")
+	}
+
+	for fieldName, value := range fields {
 		if fileInfo, ok := value.(FileInfoType); ok {
 			// 如果是文件信息，则创建文件字段
 			part, err := writer.CreateFormFile(fieldName, fileInfo.FileName)
@@ -133,7 +148,11 @@ func (t *HttpType) PostFormDataForStruct(
 			}
 		} else {
 			// 否则创建普通字段
-			if err := writer.WriteField(fieldName, value.(string)); err != nil {
+			fieldValue, ok := value.(string)
+			if !ok {
+				return nil, nil, errors.New("form field value is not string")
+			}
+			if err := writer.WriteField(fieldName, fieldValue); err != nil {
 				return nil, nil, errors.Wrap(err, "")
 			}
 		}
