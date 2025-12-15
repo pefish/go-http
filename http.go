@@ -72,12 +72,8 @@ func (t *HttpType) PostFormUrlEncoded(
 		body = params.Params.(string)
 	case []byte:
 		body = string(params.Params.([]byte))
-	case map[string]any:
-		urlValues := url.Values{}
-		for key, value := range params.Params.(map[string]any) {
-			urlValues.Add(key, value.(string))
-		}
-		body = urlValues.Encode()
+	case url.Values:
+		body = params.Params.(url.Values).Encode()
 	default:
 		return nil, nil, errors.New("unsupported params type")
 	}
