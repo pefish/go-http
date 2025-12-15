@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"io"
 	"mime/multipart"
+	"strings"
 
 	"net/http"
-	"strings"
+	"net/url"
 	"time"
 
 	i_logger "github.com/pefish/go-interface/i-logger"
@@ -42,12 +43,12 @@ type RequestParams struct {
 	Headers map[string]string
 }
 
-func (t *HttpType) PostForStruct(
+func (t *HttpType) PostJsonForStruct(
 	logger i_logger.ILogger,
 	params *RequestParams,
 	struct_ any,
 ) (res_ *http.Response, bodyBytes_ []byte, err error) {
-	res, bodyBytes, err := t.Post(logger, params)
+	res, bodyBytes, err := t.PostJson(logger, params)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -59,7 +60,86 @@ func (t *HttpType) PostForStruct(
 	return res, bodyBytes, nil
 }
 
-func (t *HttpType) Post(
+// application/x-www-form-urlencoded
+func (t *HttpType) PostFormUrlEncoded(
+	logger i_logger.ILogger,
+	params *RequestParams,
+) (res_ *http.Response, bodyBytes_ []byte, err error) {
+	var body string
+
+	switch params.Params.(type) {
+	case string:
+		body = params.Params.(string)
+	case []byte:
+		body = string(params.Params.([]byte))
+	case map[string]any:
+		urlValues := url.Values{}
+		for key, value := range params.Params.(map[string]any) {
+			urlValues.Add(key, value.(string))
+		}
+		body = urlValues.Encode()
+	default:
+		return nil, nil, errors.New("unsupported params type")
+	}
+
+	fullUrl := params.Url
+	if params.Queries != nil {
+		urlValues := make(url.Values, 0)
+		for key, value := range params.Queries {
+			urlValues.Add(key, value)
+		}
+		fullUrl += "?" + urlValues.Encode()
+	}
+	req, err := http.NewRequest("POST", fullUrl, strings.NewReader(body))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "")
+	}
+	if params.Headers == nil {
+		params.Headers = make(map[string]string)
+	}
+	params.Headers["Content-Type"] = "application/x-www-form-urlencoded"
+
+	for headerKey, headerValue := range params.Headers {
+		req.Header.Set(headerKey, headerValue)
+	}
+	if logger.Level() == t_logger.Level_DEBUG {
+		logger.DebugF(
+			`[HTTP POST] 
+Url: %s
+Content-Type: application/x-www-form-urlencoded
+Headers: %v
+Body: %s
+
+`,
+			fullUrl,
+			params.Headers,
+			body,
+		)
+	}
+
+	resp, err := t.httpClient.Do(req)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "")
+	}
+	defer resp.Body.Close()
+
+	respBytes, _ := io.ReadAll(resp.Body)
+	if logger.Level() == t_logger.Level_DEBUG {
+		logger.DebugF(
+			`[HTTP POST result] 
+Url: %s
+Body: %s
+
+`,
+			fullUrl,
+			string(respBytes),
+		)
+	}
+
+	return resp, respBytes, nil
+}
+
+func (t *HttpType) PostJson(
 	logger i_logger.ILogger,
 	params *RequestParams,
 ) (res_ *http.Response, bodyBytes_ []byte, err error) {
@@ -74,11 +154,15 @@ func (t *HttpType) Post(
 		bodyBytes, _ = json.Marshal(params.Params)
 	}
 
-	url := params.Url
+	fullUrl := params.Url
 	if params.Queries != nil {
-		url += "?" + mapToUrlQuery(params.Queries)
+		urlValues := make(url.Values, 0)
+		for key, value := range params.Queries {
+			urlValues.Add(key, value)
+		}
+		fullUrl += "?" + urlValues.Encode()
 	}
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(bodyBytes))
+	req, err := http.NewRequest("POST", fullUrl, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "")
 	}
@@ -86,6 +170,7 @@ func (t *HttpType) Post(
 		params.Headers = make(map[string]string)
 	}
 	params.Headers["Content-Type"] = "application/json"
+
 	for headerKey, headerValue := range params.Headers {
 		req.Header.Set(headerKey, headerValue)
 	}
@@ -93,11 +178,12 @@ func (t *HttpType) Post(
 		logger.DebugF(
 			`[HTTP POST] 
 Url: %s
+Content-Type: application/json
 Headers: %v
 Body: %s
 
 `,
-			url,
+			fullUrl,
 			params.Headers,
 			string(bodyBytes),
 		)
@@ -117,7 +203,7 @@ Url: %s
 Body: %s
 
 `,
-			url,
+			fullUrl,
 			string(respBytes),
 		)
 	}
@@ -151,9 +237,13 @@ func (t *HttpType) PostFormData(
 	logger i_logger.ILogger,
 	params *RequestParams,
 ) (res_ *http.Response, bodyBytes_ []byte, err error) {
-	url := params.Url
+	fullUrl := params.Url
 	if params.Queries != nil {
-		url += "?" + mapToUrlQuery(params.Queries)
+		urlValues := make(url.Values, 0)
+		for key, value := range params.Queries {
+			urlValues.Add(key, value)
+		}
+		fullUrl += "?" + urlValues.Encode()
 	}
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -187,7 +277,7 @@ func (t *HttpType) PostFormData(
 	}
 	writer.Close()
 
-	req, err := http.NewRequest("POST", url, body)
+	req, err := http.NewRequest("POST", fullUrl, body)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "")
 	}
@@ -202,11 +292,12 @@ func (t *HttpType) PostFormData(
 		logger.DebugF(
 			`[HTTP POST] 
 Url: %s
+Content-Type: multipart/form-data
 Headers: %v
 Body: %s
 
 `,
-			url,
+			fullUrl,
 			params.Headers,
 			body.String(),
 		)
@@ -226,23 +317,12 @@ Url: %s
 Body: %s
 
 `,
-			url,
+			fullUrl,
 			string(respBytes),
 		)
 	}
 
 	return resp, respBytes, nil
-}
-
-func mapToUrlQuery(paramsMap map[string]string) string {
-	if paramsMap == nil {
-		return ``
-	}
-	strParams := make([]string, 0)
-	for key, value := range paramsMap {
-		strParams = append(strParams, key+"="+value)
-	}
-	return strings.Join(strParams, "&")
 }
 
 func (t *HttpType) GetForStruct(
@@ -277,18 +357,18 @@ func (t *HttpType) Get(
 	logger i_logger.ILogger,
 	params *RequestParams,
 ) (res_ *http.Response, bodyBytes_ []byte, err_ error) {
-	url := params.Url
+	fullUrl := params.Url
 	if params.Queries != nil {
-		url += "?" + mapToUrlQuery(params.Queries)
+		urlValues := make(url.Values, 0)
+		for key, value := range params.Queries {
+			urlValues.Add(key, value)
+		}
+		fullUrl += "?" + urlValues.Encode()
 	}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", fullUrl, nil)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "")
 	}
-	if params.Headers == nil {
-		params.Headers = make(map[string]string)
-	}
-	params.Headers["Content-Type"] = "application/json"
 	for headerKey, headerValue := range params.Headers {
 		req.Header.Set(headerKey, headerValue)
 	}
@@ -300,7 +380,7 @@ Url: %s
 Headers: %v
 
 `,
-			url,
+			fullUrl,
 			params.Headers,
 		)
 	}
@@ -319,7 +399,7 @@ Url: %s
 Body: %s
 
 `,
-			url,
+			fullUrl,
 			string(respBytes),
 		)
 	}

@@ -24,7 +24,7 @@ func TestHttpClass_PostForStruct(t *testing.T) {
 		Message string `json:"message"`
 		Result  string `json:"result"`
 	}
-	_, _, err := HttpInstance.PostForStruct(
+	_, _, err := HttpInstance.PostJsonForStruct(
 		&i_logger.DefaultLogger,
 		&RequestParams{
 			Url: "http://tyo-sender.helius-rpc.com/fast",
